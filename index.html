@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#04050c">
-<title>אלכס — עוזרת AI קולית עם HUD חי</title>
+<title>Alex — a voice AI with a living HUD</title>
 <style>
   :root {
     --text: #eef0fa;
@@ -37,9 +37,10 @@
     display: block;
     height: 100%;
     background: linear-gradient(90deg, #7f9bff, #4fd8ff);
-    transform-origin: right;
+    transform-origin: left;
     transform: scaleX(0);
   }
+  html[dir="rtl"] .progress i { transform-origin: right; }
   header {
     position: fixed;
     inset-inline: 0;
@@ -48,13 +49,15 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 10px;
     padding: 14px 20px;
     padding-top: calc(14px + env(safe-area-inset-top));
     pointer-events: none;
   }
   .logo { font-weight: 800; font-size: 1.15rem; text-shadow: 0 1px 14px rgba(0,0,0,.6); }
   .logo span { color: var(--accent); }
-  .mode {
+  .chrome-end { display: flex; align-items: center; gap: 8px; }
+  .mode, .lang {
     font-size: .72rem;
     font-weight: 800;
     letter-spacing: .26em;
@@ -67,6 +70,14 @@
     direction: ltr;
     color: var(--accent);
   }
+  .lang {
+    pointer-events: auto;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: .1em;
+    color: var(--text);
+  }
+  .lang:active { transform: scale(.94); }
 
   /* ---------- Grain ---------- */
   .grain {
@@ -123,7 +134,7 @@
     text-shadow: 0 0 24px var(--c, var(--accent));
   }
   .caption h2 {
-    font-size: clamp(2.3rem, 11vw, 3.6rem);
+    font-size: clamp(2.1rem, 10vw, 3.4rem);
     font-weight: 800;
     line-height: 1.08;
     margin-top: 10px;
@@ -147,7 +158,7 @@
   .caption.opener { bottom: auto; top: 0; height: 100svh; place-items: end center; padding-bottom: 11svh; }
   .caption.opener .inner { text-align: center; max-width: 560px; }
   .caption.opener h1 {
-    font-size: clamp(4.2rem, 24vw, 7.5rem);
+    font-size: clamp(4rem, 22vw, 7.5rem);
     font-weight: 800;
     line-height: 1;
     letter-spacing: -.02em;
@@ -239,8 +250,11 @@
 
 <div class="progress"><i id="bar"></i></div>
 <header>
-  <div class="logo">אלכס<span>.</span></div>
-  <div class="mode" id="mode">LIVING-LIGHT</div>
+  <div class="logo" data-i18n="logo">Alex<span>.</span></div>
+  <div class="chrome-end">
+    <button class="lang" id="lang">עברית</button>
+    <div class="mode" id="mode">LIVING-LIGHT</div>
+  </div>
 </header>
 <div class="grain" aria-hidden="true"></div>
 
@@ -252,49 +266,49 @@
     <div class="caption opener" data-start="-0.2" data-end="0.08">
       <div class="inner">
         <span class="tag">VOICE · AI · LIVING-LIGHT</span>
-        <h1>אלכס.</h1>
-        <p>לא אפליקציה. ישות של אור שמנהלת לך את החיים.</p>
-        <div class="hint">גלול — והיא תשתנה מול העיניים שלך ▾</div>
+        <h1 data-i18n="op_h1">Alex.</h1>
+        <p data-i18n="op_p">Not an app. A being of light that runs your life.</p>
+        <div class="hint" data-i18n="hint">Scroll — watch her shapeshift ▾</div>
       </div>
     </div>
 
     <div class="caption" data-start="0.15" data-end="0.28" style="--c:#4fd8ff">
       <div class="chip">
         <span class="when">VOICE</span>
-        <h2>היא שומעת אותך</h2>
-        <p>אומרים ״אלכס״ — והחלקיקים נהיים גל קול. עברית, אנגלית, אפילו באותו משפט. עונה תוך שנייה.</p>
+        <h2 data-i18n="v_h2">She hears you</h2>
+        <p data-i18n="v_p">Say “Alex” — and the particles become a soundwave. Hebrew, English, even mixed in one sentence. She starts talking within a second.</p>
       </div>
     </div>
 
     <div class="caption" data-start="0.33" data-end="0.46" style="--c:#a98bff">
       <div class="chip">
         <span class="when">MIND</span>
-        <h2>מוח של רשת</h2>
-        <p>נתב רב-מנועי עם failover שקט, וזיכרון שלומד אותך כל יום מחדש — ולא שוכח כלום.</p>
+        <h2 data-i18n="m_h2">A networked mind</h2>
+        <p data-i18n="m_p">A multi-engine router with silent failover, and a memory that learns you a little more every day — and never forgets.</p>
       </div>
     </div>
 
     <div class="caption" data-start="0.51" data-end="0.64" style="--c:#ffc46b">
       <div class="chip">
         <span class="when">FINANCE</span>
-        <h2>הכסף תחת שליטה</h2>
-        <p>דוחות חיים, ניתוח תלוש, תובנות חודשיות. נתון רגיש? רק אחרי אישור בטלפון שלך.</p>
+        <h2 data-i18n="f_h2">Money, handled</h2>
+        <p data-i18n="f_p">Live spending reports, payslip analysis, monthly insights. Anything sensitive appears only after approval on your phone.</p>
       </div>
     </div>
 
     <div class="caption" data-start="0.69" data-end="0.81" style="--c:#4fe3b0">
       <div class="chip">
         <span class="when">HOME</span>
-        <h2>הבית שלך, בקול</h2>
-        <p>אורות, מזגן, תריסים, מצלמות — הכל נבנה סביבה. שכבה חכמה אחת מעל כל הבית.</p>
+        <h2 data-i18n="h_h2">Your home, by voice</h2>
+        <p data-i18n="h_p">Lights, AC, blinds, cameras — one smart layer above your entire home, built around her.</p>
       </div>
     </div>
 
     <div class="caption" data-start="0.86" data-end="0.97" style="--c:#ff86ae">
       <div class="chip">
         <span class="when">SOUL</span>
-        <h2>לא בוט. חברה.</h2>
-        <p>שנונה, צינית בחיוך, חמה כשצריך. קוראת אותך ועונה בהתאם — בלי בולשיט.</p>
+        <h2 data-i18n="s_h2">Not a bot. A friend.</h2>
+        <p data-i18n="s_p">Witty, wry, warm when it matters. She reads your mood and answers accordingly — no bullshit.</p>
       </div>
     </div>
   </div>
@@ -302,13 +316,58 @@
 
 <section class="outro">
   <span class="tag">NORTH STAR</span>
-  <h2>אלכס בכל בית</h2>
-  <p>קול, מוח, כסף, בית ולב — ישות אחת שעושה הכל ביחד, לא בנפרד. וזו רק ההתחלה.</p>
-  <a class="cta" href="#journey">להתעורר שוב</a>
-  <footer>אלכס. — living-light HUD · קובץ HTML אחד, גלילה אחת.</footer>
+  <h2 data-i18n="out_h2">Alex in every home</h2>
+  <p data-i18n="out_p">Voice, mind, money, home and heart — one being that does it all together, not apart. And this is just the beginning.</p>
+  <a class="cta" href="#journey" data-i18n="cta">Wake her again</a>
+  <footer data-i18n="foot">Alex. — living-light HUD · one HTML file, one scroll.</footer>
 </section>
 
 <script>
+  /* ---------- i18n: she's bilingual, so is her site ---------- */
+  const I18N = {
+    logo:  { en: 'Alex<span>.</span>', he: 'אלכס<span>.</span>' },
+    op_h1: { en: 'Alex.', he: 'אלכס.' },
+    op_p:  { en: 'Not an app. A being of light that runs your life.',
+             he: 'לא אפליקציה. ישות של אור שמנהלת לך את החיים.' },
+    hint:  { en: 'Scroll — watch her shapeshift ▾', he: 'גלול — והיא תשתנה מול העיניים שלך ▾' },
+    v_h2:  { en: 'She hears you', he: 'היא שומעת אותך' },
+    v_p:   { en: 'Say “Alex” — and the particles become a soundwave. Hebrew, English, even mixed in one sentence. She starts talking within a second.',
+             he: 'אומרים ״אלכס״ — והחלקיקים נהיים גל קול. עברית, אנגלית, אפילו באותו משפט. עונה תוך שנייה.' },
+    m_h2:  { en: 'A networked mind', he: 'מוח של רשת' },
+    m_p:   { en: 'A multi-engine router with silent failover, and a memory that learns you a little more every day — and never forgets.',
+             he: 'נתב רב-מנועי עם failover שקט, וזיכרון שלומד אותך כל יום מחדש — ולא שוכח כלום.' },
+    f_h2:  { en: 'Money, handled', he: 'הכסף תחת שליטה' },
+    f_p:   { en: 'Live spending reports, payslip analysis, monthly insights. Anything sensitive appears only after approval on your phone.',
+             he: 'דוחות חיים, ניתוח תלוש, תובנות חודשיות. נתון רגיש? רק אחרי אישור בטלפון שלך.' },
+    h_h2:  { en: 'Your home, by voice', he: 'הבית שלך, בקול' },
+    h_p:   { en: 'Lights, AC, blinds, cameras — one smart layer above your entire home, built around her.',
+             he: 'אורות, מזגן, תריסים, מצלמות — הכל נבנה סביבה. שכבה חכמה אחת מעל כל הבית.' },
+    s_h2:  { en: 'Not a bot. A friend.', he: 'לא בוט. חברה.' },
+    s_p:   { en: 'Witty, wry, warm when it matters. She reads your mood and answers accordingly — no bullshit.',
+             he: 'שנונה, צינית בחיוך, חמה כשצריך. קוראת אותך ועונה בהתאם — בלי בולשיט.' },
+    out_h2:{ en: 'Alex in every home', he: 'אלכס בכל בית' },
+    out_p: { en: 'Voice, mind, money, home and heart — one being that does it all together, not apart. And this is just the beginning.',
+             he: 'קול, מוח, כסף, בית ולב — ישות אחת שעושה הכל ביחד, לא בנפרד. וזו רק ההתחלה.' },
+    cta:   { en: 'Wake her again', he: 'להתעורר שוב' },
+    foot:  { en: 'Alex. — living-light HUD · one HTML file, one scroll.',
+             he: 'אלכס. — living-light HUD · קובץ HTML אחד, גלילה אחת.' },
+  };
+  const langBtn = document.getElementById('lang');
+  let LANG = 'en';
+  function setLang(l) {
+    LANG = l;
+    document.documentElement.setAttribute('lang', l);
+    document.documentElement.setAttribute('dir', l === 'he' ? 'rtl' : 'ltr');
+    document.title = l === 'he' ? 'אלכס — עוזרת AI קולית עם HUD חי' : 'Alex — a voice AI with a living HUD';
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const entry = I18N[el.dataset.i18n];
+      if (entry) el.innerHTML = entry[l];
+    });
+    langBtn.textContent = l === 'he' ? 'EN' : 'עברית';
+  }
+  langBtn.addEventListener('click', () => setLang(LANG === 'he' ? 'en' : 'he'));
+  setLang('en');
+
   /* ================= Scroll-driven shapeshifting particle being ================= */
   const lerp = (a, b, t) => a + (b - a) * t;
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -498,7 +557,6 @@
     const cx = W / 2, cy = H * 0.4;
     let R = Math.min(W, H) * 0.21;
     /* heart pulse */
-    const soulW = s.nearShape === 5 ? 1 - Math.abs(s.m - (s.b.shape === 5 ? 1 : 0)) : 0;
     R *= 1 + 0.05 * Math.sin(T * 2.6) * (s.a.shape === 5 || s.b.shape === 5 ? 1 : 0);
 
     /* trails: translucent fill instead of clear */
