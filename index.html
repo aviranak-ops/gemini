@@ -8,664 +8,2162 @@
 <style>
   :root {
     --text: #eef0fa;
-    --muted: rgba(238, 240, 250, .7);
+    --muted: rgba(238, 240, 250, .68);
+    --dim: rgba(238, 240, 250, .42);
     --accent: #9db4ff;
+    --c: #9db4ff;
+    --sgn: 1;
+    --ink: rgba(255,255,255,.09);
+    --plate: rgba(12, 14, 28, .62);
+    --r: 18px;
   }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html { scroll-behavior: smooth; }
-
+  html { scroll-behavior: smooth; background: #04050c; }
   body {
-    background: #04050c;
+    background: transparent;
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Heebo", "Assistant", Arial, sans-serif;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
+  button, input { font-family: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--c); outline-offset: 3px; }
+  .num { font-variant-numeric: tabular-nums; }
+  .ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
 
-  /* ---------- Fixed chrome ---------- */
-  .progress {
-    position: fixed;
-    top: 0;
-    inset-inline: 0;
-    height: 3px;
-    z-index: 60;
-    background: rgba(255,255,255,.08);
+  /* ============ shared canvas ============ */
+  #orb { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; }
+  .lb { position: fixed; inset-inline: 0; height: 50svh; background: #04050c; z-index: 45; pointer-events: none; }
+  .lb.t { top: 0; } .lb.b { bottom: 0; }
+
+  /* ============ chrome ============ */
+  .prog { position: fixed; top: 0; inset-inline: 0; height: 3px; z-index: 60; display: flex; gap: 2px; padding: 0 2px; }
+  .prog i { flex: 1; background: rgba(255,255,255,.1); position: relative; overflow: hidden; }
+  .prog i::after { content:""; position: absolute; inset: 0; background: var(--c); transform: scaleX(var(--f,0)); transform-origin: left; }
+  html[dir="rtl"] .prog i::after { transform-origin: right; }
+  .topscrim {
+    position: fixed; inset-inline: 0; top: 0; height: calc(78px + env(safe-area-inset-top));
+    z-index: 54; pointer-events: none;
+    background: linear-gradient(180deg, rgba(4,5,12,.92), rgba(4,5,12,.6) 55%, rgba(4,5,12,0));
   }
-  .progress i {
-    display: block;
-    height: 100%;
-    background: linear-gradient(90deg, #7f9bff, #4fd8ff);
-    transform-origin: left;
-    transform: scaleX(0);
-  }
-  html[dir="rtl"] .progress i { transform-origin: right; }
   header {
-    position: fixed;
-    inset-inline: 0;
-    top: 3px;
-    z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 14px 20px;
-    padding-top: calc(14px + env(safe-area-inset-top));
+    position: fixed; inset-inline: 0; top: 3px; z-index: 55;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top));
     pointer-events: none;
   }
-  .logo { font-weight: 800; font-size: 1.15rem; text-shadow: 0 1px 14px rgba(0,0,0,.6); }
-  .logo span { color: var(--accent); }
-  .chrome-end { display: flex; align-items: center; gap: 8px; }
-  .mode, .lang {
-    font-size: .72rem;
-    font-weight: 800;
-    letter-spacing: .26em;
-    background: rgba(8, 10, 22, .5);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 999px;
-    padding: 7px 16px;
-    direction: ltr;
-    color: var(--accent);
+  .logo { font-weight: 800; font-size: 1.05rem; text-shadow: 0 1px 14px rgba(0,0,0,.75); }
+  .logo span { color: var(--c); }
+  .cend { display: flex; align-items: center; gap: 6px; }
+  .pill {
+    font-size: .64rem; font-weight: 800; letter-spacing: .18em;
+    background: rgba(8,10,22,.72); border: 1px solid var(--ink);
+    border-radius: 999px; padding: 8px 12px; direction: ltr; color: var(--c);
+    min-height: 34px; display: inline-flex; align-items: center;
   }
-  .lang {
-    pointer-events: auto;
-    cursor: pointer;
-    font-family: inherit;
-    letter-spacing: .1em;
-    color: var(--text);
-  }
-  .lang:active { transform: scale(.94); }
+  button.pill { pointer-events: auto; cursor: pointer; color: var(--text); letter-spacing: .08em; }
+  button.pill:active { transform: scale(.94); }
 
-  /* ---------- Grain ---------- */
   .grain {
-    position: fixed;
-    inset: -50%;
-    z-index: 70;
-    pointer-events: none;
-    opacity: .07;
+    position: fixed; inset: 0; z-index: 52; pointer-events: none; opacity: .06;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
     animation: grain 1.1s steps(4) infinite;
   }
-  @keyframes grain {
-    0% { transform: translate(0, 0); }
-    25% { transform: translate(-2%, 3%); }
-    50% { transform: translate(3%, -2%); }
-    75% { transform: translate(-3%, -3%); }
-    100% { transform: translate(2%, 2%); }
-  }
+  @keyframes grain { 0%{background-position:0 0} 25%{background-position:-7px 11px} 50%{background-position:11px -7px} 75%{background-position:-11px -11px} 100%{background-position:7px 7px} }
 
-  /* ---------- Pinned stage ---------- */
-  .journey { height: 700svh; position: relative; }
-  .stage {
-    position: sticky;
-    top: 0;
-    height: 100svh;
-    overflow: hidden;
-    background: #04050c;
-  }
-  #orb { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .wipe { position: fixed; inset: 0; z-index: 58; background: #070a16; transform: scaleX(0); transform-origin: left; pointer-events: none; }
+  html[dir="rtl"] .wipe { transform-origin: right; }
+  .wipe.go { animation: wipe .44s cubic-bezier(.7,0,.3,1) both; }
+  @keyframes wipe { 0%{transform:scaleX(0)} 45%{transform:scaleX(1)} 55%{transform:scaleX(1)} 100%{transform:scaleX(0);transform-origin:right} }
+  html[dir="rtl"] .wipe.go { animation-name: wipeR; }
+  @keyframes wipeR { 0%{transform:scaleX(0)} 45%{transform:scaleX(1)} 55%{transform:scaleX(1)} 100%{transform:scaleX(0);transform-origin:left} }
 
-  /* ---------- Captions ---------- */
+  /* ============ hero stage ============ */
+  .journey { height: 1000svh; position: relative; z-index: 1; }
+  .stage { position: sticky; top: 0; height: 100svh; overflow: hidden; }
+
+  .rail { position: absolute; inset-inline-end: 6px; top: 50%; transform: translateY(-50%); z-index: 6; display: grid; gap: 2px; }
+  .rail button {
+    width: 40px; height: 34px; background: none; border: 0; display: grid; place-items: center; cursor: pointer;
+  }
+  .rail i { display: block; width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.22); transition: background .3s, transform .3s, box-shadow .3s; }
+  .rail button[aria-current="true"] i { background: var(--c); transform: scale(1.5); box-shadow: 0 0 14px var(--c); }
+
+  .tel {
+    position: absolute; inset-inline-start: 16px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 6;
+    font-size: .58rem; letter-spacing: .1em; color: var(--dim); direction: ltr; text-align: start;
+    line-height: 1.7; font-variant-numeric: tabular-nums; pointer-events: none;
+  }
+  .tel b { color: var(--c); font-weight: 700; }
+
+  .listen {
+    position: absolute; inset-inline: 0; top: 14svh; z-index: 6; display: grid; place-items: center;
+    opacity: 0; transition: opacity .5s; pointer-events: none;
+  }
+  .listen.on { opacity: 1; }
+  .listen span { font-size: .6rem; letter-spacing: .3em; color: var(--c); border: 1px solid var(--ink); border-radius: 999px; padding: 6px 14px; background: rgba(8,10,22,.5); }
+
   .caption {
-    position: absolute;
-    inset-inline: 0;
-    bottom: 9svh;
-    display: grid;
-    place-items: center;
-    padding: 0 22px;
-    opacity: 0;
-    pointer-events: none;
-    will-change: opacity, transform;
+    position: absolute; inset-inline: 0; bottom: 9svh; display: grid; place-items: center; padding: 0 22px;
+    opacity: 0; pointer-events: none; z-index: 5; will-change: opacity, transform;
   }
-  .caption .chip {
-    text-align: center;
-    max-width: 520px;
-  }
-  .caption .when {
-    font-weight: 800;
-    font-size: .8rem;
-    letter-spacing: .34em;
-    direction: ltr;
-    display: inline-block;
-    color: var(--c, var(--accent));
-    text-shadow: 0 0 24px var(--c, var(--accent));
-  }
+  .caption .in2 { text-align: center; max-width: 540px; }
+  .caption .kick { font-weight: 800; font-size: .7rem; letter-spacing: .34em; direction: ltr; color: var(--c); text-shadow: 0 0 24px var(--c); }
   .caption h2 {
-    font-size: clamp(2.1rem, 10vw, 3.4rem);
-    font-weight: 800;
-    line-height: 1.08;
-    margin-top: 10px;
-    text-wrap: balance;
-    background: linear-gradient(160deg, #ffffff 30%, var(--c, var(--accent)) 110%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 4px 30px rgba(0,0,0,.6));
+    font-size: clamp(1.7rem, 7.4vw, 2.7rem); font-weight: 800; line-height: 1.12; margin-top: 10px; text-wrap: balance;
+    background: linear-gradient(160deg, #fff 32%, var(--c) 112%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 4px 26px rgba(0,0,0,.75));
   }
-  .caption p {
-    color: var(--muted);
-    line-height: 1.7;
-    margin-top: 14px;
-    font-size: 1rem;
-    max-width: 440px;
-    margin-inline: auto;
-    text-shadow: 0 1px 10px rgba(0,0,0,.8);
-  }
+  .caption p { color: var(--muted); line-height: 1.68; margin-top: 12px; font-size: .94rem; max-width: 430px; margin-inline: auto; text-shadow: 0 1px 12px rgba(0,0,0,.9); }
+  .caption .tapme { margin-top: 14px; font-size: .62rem; letter-spacing: .2em; color: var(--dim); }
 
-  .caption.opener { bottom: auto; top: 0; height: 100svh; place-items: end center; padding-bottom: 11svh; }
-  .caption.opener .inner { text-align: center; max-width: 560px; }
-  .caption.opener h1 {
-    font-size: clamp(4rem, 22vw, 7.5rem);
-    font-weight: 800;
-    line-height: 1;
-    letter-spacing: -.02em;
-    background: linear-gradient(160deg, #ffffff 25%, #7f9bff 75%, #b48cff 110%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 6px 50px rgba(110, 140, 255, .45));
+  .caption.op { bottom: auto; top: 0; height: 100svh; place-items: end center; padding-bottom: 11svh; }
+  .caption.op h1 {
+    font-size: clamp(4rem, 21vw, 7rem); font-weight: 800; line-height: 1; letter-spacing: -.02em;
+    background: linear-gradient(160deg, #fff 25%, #7f9bff 75%, #b48cff 112%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 6px 46px rgba(110,140,255,.45));
   }
-  .caption.opener .tag {
-    color: var(--accent);
-    font-weight: 800;
-    font-size: .8rem;
-    letter-spacing: .34em;
-    direction: ltr;
-    text-shadow: 0 0 24px var(--accent);
-  }
-  .caption.opener p {
-    color: var(--muted);
-    margin-top: 14px;
-    font-size: 1.1rem;
-    line-height: 1.6;
-  }
-  .caption.opener .hint {
-    margin-top: 30px;
-    font-size: .8rem;
-    letter-spacing: .18em;
-    color: var(--muted);
-    animation: bob 1.8s ease-in-out infinite;
-  }
-  @keyframes bob {
-    0%, 100% { transform: translateY(0); opacity: .5; }
-    50% { transform: translateY(10px); opacity: 1; }
-  }
+  .caption.op p { margin-top: 12px; font-size: 1.02rem; }
+  .caption.op .hint { margin-top: 26px; font-size: .72rem; letter-spacing: .18em; color: var(--muted); animation: bob 1.8s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{transform:translateY(0);opacity:.5} 50%{transform:translateY(10px);opacity:1} }
+  .skip { position: absolute; inset-inline: 0; bottom: calc(52px + env(safe-area-inset-bottom)); z-index: 7; display: grid; place-items: center; opacity: 0; transition: opacity .6s; pointer-events: none; }
+  .skip.on { opacity: 1; pointer-events: auto; }
 
-  /* ---------- Outro ---------- */
-  .outro {
-    position: relative;
-    padding: 110px 24px calc(70px + env(safe-area-inset-bottom));
-    text-align: center;
-    background: #04050c;
+  .echo {
+    position: absolute; inset-inline: 0; top: 26svh; z-index: 7; display: grid; place-items: center;
+    opacity: 0; transition: opacity .3s; pointer-events: none;
   }
-  .outro .tag {
-    color: var(--accent);
-    font-weight: 800;
-    font-size: .76rem;
-    letter-spacing: .3em;
-    direction: ltr;
-    display: inline-block;
+  .echo.on { opacity: 1; }
+  .echo span { font-size: .62rem; font-weight: 800; letter-spacing: .22em; color: #04050c; background: var(--c); border-radius: 999px; padding: 7px 15px; }
+
+  /* ============ sections ============ */
+  .sec {
+    position: relative; z-index: 2; padding: 96px 18px 104px;
+    background: linear-gradient(180deg, rgba(4,5,12,.55), rgba(4,5,12,.94) 14%, rgba(4,5,12,.94) 86%, rgba(4,5,12,.55));
   }
-  .outro h2 {
-    font-size: clamp(2.2rem, 10vw, 3.2rem);
-    font-weight: 800;
-    margin-top: 12px;
-    text-wrap: balance;
-    background: linear-gradient(160deg, #fff 30%, #b48cff 110%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+  .wrap { max-width: 760px; margin-inline: auto; }
+  .kicker { font-size: .64rem; font-weight: 800; letter-spacing: .3em; color: var(--c); direction: ltr; display: inline-block; }
+  .sec h2 {
+    font-size: clamp(1.9rem, 8vw, 2.9rem); font-weight: 800; line-height: 1.1; margin-top: 10px; text-wrap: balance;
+    background: linear-gradient(150deg, #fff 34%, var(--c) 116%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
   }
-  .outro p {
-    color: var(--muted);
-    max-width: 460px;
-    margin: 18px auto 0;
-    line-height: 1.75;
+  .lede { color: var(--muted); line-height: 1.75; margin-top: 14px; font-size: 1rem; max-width: 560px; }
+  .sub { font-size: .78rem; font-weight: 800; letter-spacing: .2em; color: var(--dim); margin: 40px 0 14px; direction: ltr; }
+  html[dir="rtl"] .sub { direction: rtl; letter-spacing: 0; }
+
+  .rev { opacity: 0; transform: translateY(26px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0s); }
+  html[data-dir="-1"] .rev { transform: translateY(-26px); }
+  .rev.in { opacity: 1; transform: none; }
+
+  .badge { font-size: .54rem; font-weight: 800; letter-spacing: .14em; border-radius: 4px; padding: 3px 6px; direction: ltr; white-space: nowrap; vertical-align: middle; }
+  .badge.d { color: #9db4ff; background: rgba(157,180,255,.14); }
+  .badge.o { color: #ffc46b; background: rgba(255,196,107,.14); }
+  .badge.i { color: #ff9db4; background: rgba(255,157,180,.16); }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 10px; margin-top: 26px; }
+  .stat { border: 1px solid var(--ink); border-radius: 14px; padding: 14px 12px; background: var(--plate); }
+  .stat b { display: block; font-size: 1.5rem; font-weight: 800; color: var(--c); direction: ltr; font-variant-numeric: tabular-nums; }
+  .stat span { display: block; font-size: .68rem; color: var(--dim); line-height: 1.5; margin-top: 5px; }
+
+  .btn {
+    border: 1px solid var(--ink); background: rgba(255,255,255,.05); color: var(--text);
+    border-radius: 999px; padding: 13px 20px; font-size: .78rem; font-weight: 700; cursor: pointer;
+    min-height: 46px; display: inline-flex; align-items: center; gap: 8px; position: relative; overflow: hidden;
   }
-  .outro .cta {
-    display: inline-block;
-    margin-top: 34px;
-    background: linear-gradient(135deg, #7f9bff, #b48cff);
-    color: #0a0c1a;
-    text-decoration: none;
-    font-weight: 800;
-    padding: 16px 38px;
-    border-radius: 999px;
-    box-shadow: 0 0 50px -8px rgba(140, 130, 255, .7);
-    transition: transform .25s;
+  .btn:active { transform: scale(.96); }
+  .btn.on { border-color: var(--c); color: var(--c); box-shadow: 0 0 26px -8px var(--c); }
+  .btn.solid { background: var(--c); color: #06070f; border-color: transparent; font-weight: 800; }
+  [data-ripple]::after {
+    content: ""; position: absolute; left: var(--rx, 50%); top: var(--ry, 50%); width: 8px; height: 8px;
+    margin: -4px; border-radius: 50%; background: currentColor; opacity: 0; pointer-events: none;
   }
-  .outro .cta:active { transform: scale(.94); }
-  .outro footer { margin-top: 70px; color: var(--muted); font-size: .8rem; }
+  [data-ripple].rip::after { animation: rip .42s ease-out; }
+  @keyframes rip { from { opacity: .3; transform: scale(1); } to { opacity: 0; transform: scale(22); } }
+  .row-btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; align-items: center; }
+  .row-btns .badge { align-self: center; }
+
+  .card { border: 1px solid var(--ink); border-radius: var(--r); padding: 16px; background: var(--plate); }
+  .card h3 { font-size: .98rem; font-weight: 800; }
+  .card p { font-size: .84rem; color: var(--muted); line-height: 1.65; margin-top: 7px; }
+
+  /* ---- pipeline ---- */
+  .flow { margin-top: 26px; position: relative; }
+  .flow::before {
+    content: ""; position: absolute; inset-block: 12px; inset-inline-start: 17px; width: 2px;
+    background: linear-gradient(180deg, var(--c), rgba(255,255,255,.06));
+    transform: scaleY(var(--ink-p, 0)); transform-origin: top; transition: transform 1.6s ease-out;
+  }
+  .node { display: grid; grid-template-columns: 36px 1fr; gap: 12px; padding-bottom: 20px; position: relative; }
+  .node .dot {
+    width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--ink); background: #080b16;
+    display: grid; place-items: center; font-size: .68rem; font-weight: 800; color: var(--c);
+    direction: ltr; position: relative; z-index: 1; transition: box-shadow .4s, border-color .4s, color .4s;
+  }
+  .node.hot .dot { border-color: var(--c); box-shadow: 0 0 22px -4px var(--c); }
+  .node.amber .dot { color: #ffc46b; border-color: #ffc46b; box-shadow: 0 0 22px -4px #ffc46b; }
+  .node h4 { font-size: .9rem; font-weight: 800; padding-top: 8px; }
+  .node .does { font-size: .82rem; color: var(--muted); line-height: 1.6; margin-top: 5px; }
+  .node .fails { font-size: .76rem; color: var(--dim); line-height: 1.6; margin-top: 6px; padding-inline-start: 10px; border-inline-start: 2px solid rgba(255,196,107,.4); }
+  .node .fails b { color: #ffc46b; font-weight: 700; letter-spacing: .06em; font-size: .62rem; }
+  .node.dead { opacity: .4; }
+  .node.dead .dot { color: var(--dim); border-color: var(--ink); box-shadow: none; }
+
+  .ladder { display: grid; gap: 8px; margin-top: 14px; }
+  .tier { display: flex; align-items: center; gap: 10px; border: 1px solid var(--ink); border-radius: 12px; padding: 11px 13px; background: rgba(255,255,255,.03); transition: opacity .4s, border-color .4s; }
+  .tier i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 12px var(--c); flex: none; }
+  .tier span { font-size: .8rem; }
+  .tier em { font-size: .68rem; color: var(--dim); font-style: normal; margin-inline-start: auto; direction: ltr; }
+  .tier.off { opacity: .28; }
+  .tier.off i { background: var(--dim); box-shadow: none; }
+  .tier.floor.lit { border-color: var(--c); }
+
+  /* ---- speakers ---- */
+  .spk { display: grid; gap: 12px; margin-top: 24px; grid-template-columns: 1fr; }
+  @media (min-width: 620px) { .spk { grid-template-columns: repeat(3, 1fr); } }
+  .spkc { border: 1px solid var(--ink); border-radius: var(--r); padding: 14px; background: var(--plate); cursor: pointer; text-align: start; transition: border-color .35s, background .35s; }
+  .spkc.sel { border-color: var(--sc); background: rgba(255,255,255,.06); }
+  .spkc .name { font-size: .8rem; font-weight: 800; letter-spacing: .14em; color: var(--sc); direction: ltr; }
+  .print { display: flex; align-items: flex-end; gap: 2px; height: 42px; margin: 12px 0; }
+  .print i { flex: 1; background: var(--sc); border-radius: 1px; height: calc(var(--h) * 1%); opacity: .8; transition: height .5s cubic-bezier(.2,.7,.2,1), opacity .4s; }
+  .spkc:not(.sel) .print i { height: calc(var(--h) * .42%) !important; opacity: .32; }
+  .spkc.sel .print i { opacity: .95; box-shadow: 0 0 8px var(--sc); }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: .74rem; }
+  .kv dt { color: var(--dim); }
+  .kv dd { color: var(--muted); }
+  .scope { display: grid; gap: 5px; margin-top: 12px; }
+  .scope li { list-style: none; font-size: .72rem; color: var(--muted); padding-inline-start: 14px; position: relative; }
+  .scope li::before { content: "◦"; position: absolute; inset-inline-start: 0; color: var(--sc); }
+  .scope li.out { text-decoration: line-through; color: var(--dim); opacity: .6; }
+
+  .gram { margin-top: 22px; border: 1px solid var(--ink); border-radius: var(--r); padding: 16px; background: var(--plate); }
+  .gram .seg { display: inline-flex; border: 1px solid var(--ink); border-radius: 999px; overflow: hidden; margin-top: 12px; }
+  .gram .seg button { background: none; border: 0; padding: 11px 18px; font-size: .78rem; cursor: pointer; color: var(--muted); min-height: 44px; }
+  .gram .seg button.on { background: var(--c); color: #06070f; font-weight: 800; }
+  .gram .say { margin-top: 14px; font-size: 1.02rem; line-height: 1.6; color: var(--text); }
+  .gram .say::before { content: "“"; color: var(--c); }
+  .gram .say::after { content: "”"; color: var(--c); }
+
+  .tri { display: grid; gap: 10px; margin-top: 20px; }
+  @media (min-width: 620px) { .tri { grid-template-columns: repeat(3, 1fr); } }
+  .tri > div { border: 1px solid var(--ink); border-radius: 14px; padding: 14px; background: rgba(255,255,255,.03); }
+  .tri h4 { font-size: .66rem; font-weight: 800; letter-spacing: .16em; color: var(--c); direction: ltr; }
+  html[dir="rtl"] .tri h4 { direction: rtl; letter-spacing: .04em; }
+  .tri p { font-size: .8rem; color: var(--muted); line-height: 1.6; margin-top: 8px; }
+
+  /* ---- house ---- */
+  .plan { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 24px; }
+  .room {
+    border: 1px solid var(--ink); border-radius: 14px; padding: 14px 10px; background: #06080f; cursor: pointer;
+    aspect-ratio: 1.25; display: grid; align-content: center; justify-items: center; gap: 6px; text-align: center;
+    transition: background .5s, border-color .5s, opacity .5s, box-shadow .5s;
+  }
+  .room .g { font-size: 1.2rem; line-height: 1; opacity: .5; transition: opacity .5s; }
+  .room b { font-size: .68rem; font-weight: 700; }
+  .room.lit { background: radial-gradient(120% 120% at 50% 20%, rgba(255,220,150,.22), rgba(255,255,255,.02)); border-color: rgba(255,220,150,.45); box-shadow: 0 0 30px -10px rgba(255,215,140,.7); }
+  .room.lit .g { opacity: 1; }
+  .room.dark { opacity: .25; }
+  .fam { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
+  .fam span { font-size: .7rem; border: 1px solid var(--ink); border-radius: 999px; padding: 7px 12px; color: var(--muted); background: rgba(255,255,255,.03); }
+  .fam span.hi { border-color: var(--c); color: var(--c); }
+
+  .remote { border: 1px solid var(--ink); border-radius: var(--r); padding: 16px; background: var(--plate); margin-top: 18px; }
+  .remote .temp { font-size: 3rem; font-weight: 800; direction: ltr; font-variant-numeric: tabular-nums; line-height: 1; color: var(--c); }
+  .remote .temp small { font-size: 1rem; opacity: .6; }
+  .remote .grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .remote .grid button { border: 1px solid var(--ink); background: rgba(255,255,255,.04); border-radius: 12px; min-width: 46px; min-height: 46px; padding: 0 14px; font-size: .78rem; cursor: pointer; color: var(--muted); }
+  .remote .grid button.on { background: var(--c); color: #06070f; font-weight: 800; border-color: transparent; }
+  .say-line { margin-top: 14px; font-size: .86rem; color: var(--c); background: rgba(255,255,255,.04); border: 1px dashed var(--ink); border-radius: 12px; padding: 12px 14px; cursor: pointer; }
+  .say-line em { font-style: normal; color: var(--dim); font-size: .66rem; display: block; margin-top: 5px; letter-spacing: .1em; }
+
+  .steps { display: grid; gap: 0; margin-top: 14px; counter-reset: s; }
+  .steps li { list-style: none; counter-increment: s; display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding: 9px 0; font-size: .82rem; color: var(--muted); line-height: 1.6; }
+  .steps li::before { content: counter(s); font-size: .66rem; font-weight: 800; color: var(--c); border: 1px solid var(--ink); border-radius: 50%; width: 26px; height: 26px; display: grid; place-items: center; }
+  .autos { display: grid; gap: 8px; margin-top: 14px; }
+  .auto { border: 1px solid var(--ink); border-radius: 12px; padding: 12px 14px; background: rgba(255,255,255,.03); cursor: pointer; }
+  .auto b { font-size: .58rem; font-weight: 800; letter-spacing: .16em; color: var(--c); direction: ltr; }
+  .auto p { font-size: .84rem; margin-top: 6px; color: var(--muted); }
+
+  /* ---- panels ---- */
+  .tabs { display: flex; gap: 8px; margin-top: 24px; }
+  .tabs button { flex: 1; border: 0; border-bottom: 2px solid var(--ink); background: none; padding: 13px 6px; font-size: .74rem; font-weight: 800; letter-spacing: .14em; color: var(--dim); cursor: pointer; min-height: 46px; direction: ltr; }
+  .tabs button.on { color: var(--c); border-bottom-color: var(--c); }
+  .deck { border: 1px solid var(--ink); border-radius: var(--r); margin-top: 14px; background: #06080f; overflow: hidden; position: relative; min-height: 300px; }
+  .pane { padding: 12px; display: none; }
+  .pane.on { display: block; }
+  .prow { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; padding: 10px 8px; border-radius: 10px; opacity: 0; transform: translateX(calc(var(--sgn) * 16px)); animation: prow .45s cubic-bezier(.2,.7,.2,1) forwards; animation-delay: var(--d); }
+  @keyframes prow { to { opacity: 1; transform: none; } }
+  .prow:nth-child(odd) { background: rgba(255,255,255,.025); }
+  .av { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: .7rem; font-weight: 800; color: #06070f; }
+  .prow .t { font-size: .82rem; font-weight: 600; }
+  .prow .s { font-size: .7rem; color: var(--dim); margin-top: 3px; }
+  .prow .m { font-size: .62rem; color: var(--dim); direction: ltr; }
+  .swatch { display: flex; gap: 4px; margin: 12px 8px 4px; }
+  .swatch i { width: 16px; height: 16px; border-radius: 4px; }
+  .mail3 { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  @media (min-width: 640px) { .mail3 { grid-template-columns: 92px 1fr 1.3fr; } }
+  .mail3 > div { border: 1px solid var(--ink); border-radius: 12px; padding: 10px; min-height: 130px; }
+  .mail3 .fld { font-size: .72rem; color: var(--muted); display: grid; gap: 9px; }
+  .mail3 .fld b { color: var(--c); font-weight: 700; }
+  .body-mock { font-size: .78rem; color: var(--muted); line-height: 1.7; }
+  .body-mock .ph { display: block; height: 8px; border-radius: 4px; background: rgba(255,255,255,.07); margin: 7px 0; }
+  .body-mock .ph.w7 { width: 70%; } .body-mock .ph.w4 { width: 40%; }
+  .spec { display: flex; align-items: flex-end; gap: 3px; height: 68px; margin-top: 10px; }
+  .spec i { flex: 1; background: linear-gradient(180deg, var(--c), rgba(157,180,255,.25)); border-radius: 2px 2px 0 0; height: 12%; }
+  .disc { width: 76px; height: 76px; border-radius: 50%; margin: 14px auto 0; background: conic-gradient(from 0deg, var(--c), transparent 70%, var(--c)); display: grid; place-items: center; }
+  .disc::after { content: ""; width: 22px; height: 22px; border-radius: 50%; background: #06080f; }
+  .pop {
+    position: absolute; inset-inline-start: 12px; top: 46px; width: min(78%, 250px);
+    border: 1px solid var(--c); border-radius: 14px; background: rgba(10,13,26,.96);
+    box-shadow: 0 20px 60px -14px #000; z-index: 3; touch-action: none;
+  }
+  .pop .bar { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--ink); cursor: grab; }
+  .pop .bar b { font-size: .68rem; letter-spacing: .1em; color: var(--c); flex: 1; }
+  .pop .bar button { border: 0; background: rgba(255,255,255,.08); border-radius: 6px; width: 26px; height: 26px; font-size: .7rem; cursor: pointer; color: var(--text); }
+  .pop .bod { padding: 10px; font-size: .76rem; color: var(--muted); line-height: 1.6; }
+  .pop .rz { position: absolute; inset-inline-end: 0; bottom: 0; width: 26px; height: 26px; cursor: nwse-resize; }
+  .pop .rz::before { content: ""; position: absolute; inset-inline-end: 6px; bottom: 6px; width: 9px; height: 9px; border-inline-end: 2px solid var(--c); border-bottom: 2px solid var(--c); }
+  .pop.hid { display: none; }
+
+  /* ---- money ---- */
+  .phone { border: 1px solid var(--ink); border-radius: 26px; padding: 12px; background: #06080f; max-width: 320px; margin: 24px auto 0; position: relative; }
+  .phone .notch { width: 54px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.14); margin: 2px auto 12px; }
+  .req { border: 1px solid var(--ink); border-radius: 16px; padding: 14px; background: rgba(255,255,255,.04); }
+  .req .from { font-size: .6rem; letter-spacing: .18em; color: var(--c); direction: ltr; }
+  .req p { font-size: .86rem; line-height: 1.6; margin-top: 8px; }
+  .gate { display: flex; gap: 10px; margin-top: 14px; align-items: center; }
+  .hold {
+    flex: 1; position: relative; border: 0; border-radius: 12px; min-height: 50px; cursor: pointer;
+    background: rgba(255,196,107,.14); color: #ffc46b; font-weight: 800; font-size: .8rem; overflow: hidden; touch-action: none;
+  }
+  .hold::before { content: ""; position: absolute; inset: 0; background: #ffc46b; opacity: .28; transform: scaleX(var(--p, 0)); transform-origin: left; }
+  html[dir="rtl"] .hold::before { transform-origin: right; }
+  .hold span { position: relative; }
+  .hold.shake { animation: shk .3s; }
+  @keyframes shk { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+  .deny { border: 1px solid var(--ink); background: none; border-radius: 12px; min-height: 50px; padding: 0 16px; font-size: .8rem; color: var(--muted); cursor: pointer; }
+  .dash { margin-top: 18px; position: relative; }
+  .dash .wm { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 2; }
+  .dash .wm span { font-size: 1.1rem; font-weight: 800; letter-spacing: .4em; color: rgba(255,255,255,.09); transform: rotate(-16deg); direction: ltr; }
+  .mrow { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--ink); }
+  .mrow .lbl { font-size: .82rem; color: var(--muted); }
+  .mrow .val { font-weight: 800; direction: ltr; font-variant-numeric: tabular-nums; position: relative; }
+  .mrow .val.sealed { color: transparent; }
+  .mrow .val.sealed::after { content: ""; position: absolute; inset: -2px -4px; background: rgba(255,196,107,.2); border-radius: 4px; }
+  .bars { display: flex; align-items: flex-end; gap: 6px; height: 90px; margin-top: 16px; }
+  .bars i { flex: 1; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, #ffc46b, rgba(255,196,107,.2)); height: 6%; transition: height 1s cubic-bezier(.2,.7,.2,1); }
+  .locked { text-align: center; font-size: .74rem; color: var(--dim); padding: 22px 0; }
+
+  /* ---- team ---- */
+  .agents { display: grid; gap: 10px; margin-top: 24px; grid-template-columns: 1fr 1fr; }
+  @media (min-width: 700px) { .agents { grid-template-columns: repeat(4, 1fr); } }
+  .ag { border: 1px solid var(--ink); border-radius: 14px; padding: 13px; background: var(--plate); cursor: pointer; text-align: start; transition: border-color .35s, transform .35s, box-shadow .35s; }
+  .ag.on { border-color: var(--c); transform: translateY(-3px); box-shadow: 0 14px 40px -18px var(--c); }
+  .ag b { font-size: .74rem; font-weight: 800; letter-spacing: .1em; color: var(--c); direction: ltr; }
+  html[dir="rtl"] .ag b { direction: rtl; letter-spacing: 0; }
+  .ag .r { font-size: .74rem; color: var(--muted); margin-top: 7px; line-height: 1.55; }
+  .agd { border: 1px solid var(--c); border-radius: 14px; padding: 14px; margin-top: 12px; background: rgba(255,255,255,.04); }
+  .agd .kv { font-size: .78rem; }
+  .ribbon { display: flex; align-items: flex-end; gap: 6px; height: 116px; margin-top: 16px; }
+  .col { flex: 1; border-radius: 8px 8px 0 0; background: rgba(255,255,255,.05); border: 1px solid var(--ink); position: relative; height: 100%; overflow: hidden; transition: opacity .4s; }
+  .col::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: var(--l, 0%); background: linear-gradient(180deg, var(--c), rgba(201,160,255,.15)); transition: height .5s; }
+  .col.dead { opacity: .25; }
+  .col b { position: absolute; inset-inline: 0; bottom: 6px; text-align: center; font-size: .56rem; letter-spacing: .1em; color: var(--muted); z-index: 1; direction: ltr; }
+  .ticker { margin-top: 12px; font-size: .78rem; color: var(--c); min-height: 2.6em; line-height: 1.6; }
+  .ticker b { color: var(--dim); font-weight: 400; }
+
+  /* ---- registry ---- */
+  .searchbar { display: flex; gap: 8px; margin-top: 22px; align-items: center; }
+  .searchbar input {
+    flex: 1; background: rgba(255,255,255,.05); border: 1px solid var(--ink); border-radius: 12px;
+    padding: 13px 14px; font-size: .86rem; min-height: 46px;
+  }
+  .searchbar input::placeholder { color: var(--dim); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .chip { border: 1px solid var(--ink); background: rgba(255,255,255,.04); border-radius: 999px; padding: 9px 13px; font-size: .7rem; cursor: pointer; color: var(--muted); min-height: 40px; }
+  .chip.on { border-color: var(--cc); color: var(--cc); background: rgba(255,255,255,.07); }
+  .chip u { text-decoration: none; opacity: .6; margin-inline-start: 5px; font-variant-numeric: tabular-nums; }
+  .count { font-size: .72rem; color: var(--dim); margin-top: 12px; direction: ltr; display: inline-block; }
+  .grid56 { display: grid; gap: 9px; margin-top: 12px; grid-template-columns: 1fr; }
+  @media (min-width: 620px) { .grid56 { grid-template-columns: 1fr 1fr; } }
+  .cap { border: 1px solid var(--ink); border-radius: 13px; background: var(--plate); overflow: hidden; cursor: pointer; position: relative; }
+  .cap.gone { display: none; }
+  .cap .hd { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; padding: 13px; }
+  .cap .ct { font-size: .84rem; font-weight: 700; line-height: 1.45; }
+  .cap .cc { font-size: .52rem; font-weight: 800; letter-spacing: .12em; color: var(--cc); border: 1px solid currentColor; border-radius: 4px; padding: 3px 5px; direction: ltr; opacity: .8; }
+  .cap .dt { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s ease; }
+  .cap.open .dt { grid-template-rows: 1fr; }
+  .cap .dt > div { overflow: hidden; }
+  .cap .dt p { font-size: .78rem; color: var(--muted); line-height: 1.65; padding: 0 13px 13px; }
+  .cap .scan { position: absolute; inset-inline: 0; top: 0; height: 1px; background: var(--cc); opacity: 0; }
+  .cap.in .scan { animation: scan .8s ease-out; }
+  @keyframes scan { 0%{opacity:.9;transform:translateY(0)} 100%{opacity:0;transform:translateY(120px)} }
+  .residue { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; min-height: 10px; }
+  .residue i { width: 9px; height: 9px; border-radius: 50%; background: var(--rc, rgba(255,255,255,.16)); opacity: .5; }
+  .matrix { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: .78rem; }
+  .matrix th, .matrix td { text-align: start; padding: 10px 8px; border-bottom: 1px solid var(--ink); }
+  .matrix th { font-size: .62rem; letter-spacing: .14em; color: var(--dim); font-weight: 800; }
+  .matrix td.n { direction: ltr; font-variant-numeric: tabular-nums; font-weight: 800; color: var(--c); }
+  .matrix .bar { height: 6px; border-radius: 3px; background: var(--cc); opacity: .55; }
+  .ledger { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: .76rem; }
+  .ledger td { padding: 9px 6px; border-bottom: 1px solid var(--ink); vertical-align: middle; }
+  .ledger td.v { direction: ltr; font-variant-numeric: tabular-nums; font-weight: 800; color: var(--c); white-space: nowrap; width: 1%; }
+  .ledger td.l { color: var(--muted); line-height: 1.5; }
+  .ledger td.b { width: 1%; }
+  .hide { display: none; }
+
+  /* ---- outro ---- */
+  .outro { position: relative; z-index: 2; padding: 110px 22px calc(70px + env(safe-area-inset-bottom)); text-align: center; background: linear-gradient(180deg, rgba(4,5,12,.6), #04050c 30%); }
+  .outro h2 { font-size: clamp(2rem, 9vw, 3rem); font-weight: 800; margin-top: 12px; text-wrap: balance; background: linear-gradient(150deg, #fff 30%, #b48cff 114%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .outro p { color: var(--muted); max-width: 460px; margin: 18px auto 0; line-height: 1.75; }
+  .cta { display: inline-block; margin-top: 32px; background: linear-gradient(135deg, #7f9bff, #b48cff); color: #06070f; text-decoration: none; font-weight: 800; padding: 16px 36px; border-radius: 999px; box-shadow: 0 0 46px -10px rgba(140,130,255,.8); }
+  .cta:active { transform: scale(.95); }
+  .legend { margin-top: 54px; font-size: .68rem; color: var(--dim); line-height: 1.9; max-width: 520px; margin-inline: auto; }
+  .legend .badge { margin-inline-end: 6px; }
+  footer { margin-top: 40px; color: var(--dim); font-size: .7rem; }
 
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    .caption.opener .hint, .grain { animation: none; }
+    .caption.op .hint, .grain, .cap.in .scan { animation: none; }
+    .rev { transition-duration: .01s; }
   }
+  html[data-motion="still"] .grain { animation: none; }
+  html[data-motion="still"] .caption.op .hint { animation: none; }
 </style>
 </head>
 <body>
-
-<div class="progress"><i id="bar"></i></div>
-<header>
-  <div class="logo" data-i18n="logo">Alex<span>.</span></div>
-  <div class="chrome-end">
-    <button class="lang" id="lang">עברית</button>
-    <div class="mode" id="mode">LIVING-LIGHT</div>
-  </div>
-</header>
+<canvas id="orb"></canvas>
+<div class="lb t" id="lbt"></div>
+<div class="lb b" id="lbb"></div>
+<div class="wipe" id="wipe"></div>
 <div class="grain" aria-hidden="true"></div>
 
-<!-- One particle being, pinned for the whole page. Scroll = she shapeshifts. -->
+<div class="prog" id="prog"></div>
+<div class="topscrim" aria-hidden="true"></div>
+<header>
+  <div class="logo" data-enh="Alex<span>.</span>" data-heh="אלכס<span>.</span>">Alex<span>.</span></div>
+  <div class="cend">
+    <button class="pill" id="motion" data-ripple title="motion">AUTO</button>
+    <button class="pill" id="lang" data-ripple>עברית</button>
+    <div class="pill" id="mode">LIVING-LIGHT</div>
+  </div>
+</header>
+
 <div class="journey" id="journey">
-  <div class="stage">
-    <canvas id="orb"></canvas>
+  <div class="stage" id="stage">
+    <nav class="rail" id="rail" aria-label="chapters"></nav>
+    <div class="tel" id="tel"></div>
+    <div class="listen" id="listenChip"><span data-en="LISTENING" data-he="מקשיבה">LISTENING</span></div>
+    <div class="echo" id="echoChip"><span data-en="ECHO GUARD · CUT OFF" data-he="נקטעה · מגן הד">ECHO GUARD · CUT OFF</span></div>
+    <div class="skip" id="skip"><button class="pill" data-ripple data-en="SKIP THE INTRO" data-he="לדלג על הפתיחה">SKIP THE INTRO</button></div>
 
-    <div class="caption opener" data-start="-0.2" data-end="0.08">
-      <div class="inner">
-        <span class="tag">VOICE · AI · LIVING-LIGHT</span>
-        <h1 data-i18n="op_h1">Alex.</h1>
-        <p data-i18n="op_p">Not an app. A being of light that runs your life.</p>
-        <div class="hint" data-i18n="hint">Scroll — watch her shapeshift ▾</div>
+    <div class="caption op" data-ch="GALAXY">
+      <div class="in2">
+        <span class="kick">VOICE · AI · LIVING-LIGHT</span>
+        <h1 data-en="Alex." data-he="אלכס.">Alex.</h1>
+        <p data-en="Not an app. One being of light that hears you, knows which of you is talking, and runs the house." data-he="לא אפליקציה. ישות אחת של אור ששומעת אותך, יודעת מי מדבר, ומנהלת את הבית.">Not an app. One being of light that hears you, knows which of you is talking, and runs the house.</p>
+        <div class="hint" data-en="Scroll — nine chapters, one being ▾" data-he="גלול — תשעה פרקים, ישות אחת ▾">Scroll — nine chapters, one being ▾</div>
       </div>
     </div>
 
-    <div class="caption" data-start="0.15" data-end="0.28" style="--c:#4fd8ff">
-      <div class="chip">
-        <span class="when">VOICE</span>
-        <h2 data-i18n="v_h2">She hears you</h2>
-        <p data-i18n="v_p">Say “Alex” — and the particles become a soundwave. Hebrew, English, even mixed in one sentence. She starts talking within a second.</p>
+    <div class="caption" data-ch="VOICE">
+      <div class="in2">
+        <span class="kick">VOICE</span>
+        <h2 data-en="She starts speaking about a second after you stop." data-he="היא מתחילה לדבר שנייה אחרי שסיימת.">She starts speaking about a second after you stop.</h2>
+        <p data-en="The opening clause goes to voice the moment it lands, while the rest of the answer is still being written — and your first word cuts her off mid-sentence." data-he="הפסוקית הראשונה עולה לקול ברגע שהיא מוכנה, בזמן שהמשך התשובה עוד נכתב — והמילה הראשונה שלך עוצרת אותה באמצע משפט.">The opening clause goes to voice the moment it lands, while the rest of the answer is still being written — and your first word cuts her off mid-sentence.</p>
+        <div class="tapme" data-en="TAP THE SCREEN TO INTERRUPT HER" data-he="גע במסך כדי לקטוע אותה">TAP THE SCREEN TO INTERRUPT HER</div>
       </div>
     </div>
 
-    <div class="caption" data-start="0.33" data-end="0.46" style="--c:#a98bff">
-      <div class="chip">
-        <span class="when">MIND</span>
-        <h2 data-i18n="m_h2">A networked mind</h2>
-        <p data-i18n="m_p">A multi-engine router with silent failover, and a memory that learns you a little more every day — and never forgets.</p>
+    <div class="caption" data-ch="IDENTITY">
+      <div class="in2">
+        <span class="kick">IDENTITY</span>
+        <h2 data-en="Every voice in the house has a name." data-he="לכל קול בבית יש שם.">Every voice in the house has a name.</h2>
+        <p data-en="A 512-dimension voiceprint identifies you by timbre — matched on the device, on the CPU. No cloud, no biometric upload, and a separate private memory per person." data-he="טביעת קול ב-512 מידות מזהה אותך לפי צליל הקול — ההשוואה רצה על המכשיר, על המעבד. בלי ענן, בלי העלאה של נתונים ביומטריים, ולכל אדם זיכרון פרטי נפרד.">A 512-dimension voiceprint identifies you by timbre — matched on the device, on the CPU. No cloud, no biometric upload, and a separate private memory per person.</p>
       </div>
     </div>
 
-    <div class="caption" data-start="0.51" data-end="0.64" style="--c:#ffc46b">
-      <div class="chip">
-        <span class="when">FINANCE</span>
-        <h2 data-i18n="f_h2">Money, handled</h2>
-        <p data-i18n="f_p">Live spending reports, payslip analysis, monthly insights. Anything sensitive appears only after approval on your phone.</p>
+    <div class="caption" data-ch="MIND">
+      <div class="in2">
+        <span class="kick">MIND</span>
+        <h2 data-en="She understands what you meant, not just what you said." data-he="מבינה למה התכוונת, לא רק מה אמרת.">She understands what you meant, not just what you said.</h2>
+        <p data-en="One fast pass maps any phrasing onto 18 intents — through typos, paraphrase and speech slips. Then deterministic code executes it the same way every time." data-he="סיווג אחד מהיר ממפה כל ניסוח ל-18 כוונות — גם עם שגיאות, ניסוח אחר או שיבוש דיבור. ואז קוד קבוע מבצע בדיוק אותו דבר בכל פעם.">One fast pass maps any phrasing onto 18 intents — through typos, paraphrase and speech slips. Then deterministic code executes it the same way every time.</p>
       </div>
     </div>
 
-    <div class="caption" data-start="0.69" data-end="0.81" style="--c:#4fe3b0">
-      <div class="chip">
-        <span class="when">HOME</span>
-        <h2 data-i18n="h_h2">Your home, by voice</h2>
-        <p data-i18n="h_p">Lights, AC, blinds, cameras — one smart layer above your entire home, built around her.</p>
+    <div class="caption" data-ch="FINANCE">
+      <div class="in2">
+        <span class="kick">FINANCE</span>
+        <h2 data-en="She handles the money out loud. She shows the numbers in private." data-he="על הכסף היא מדברת בקול. את המספרים היא מראה רק לך.">She handles the money out loud. She shows the numbers in private.</h2>
+        <p data-en="Payslips, cards, bills and policies — collected and parsed every month. No figure is ever spoken aloud or printed in chat; it waits behind one tap on your phone." data-he="תלושי שכר, אשראי, חשבונות ופוליסות — נאספים ומפוענחים כל חודש. שום סכום לא נאמר בקול ולא נכתב בצ'אט; הוא ממתין לאישור אחד מהטלפון.">Payslips, cards, bills and policies — collected and parsed every month. No figure is ever spoken aloud or printed in chat; it waits behind one tap on your phone.</p>
       </div>
     </div>
 
-    <div class="caption" data-start="0.86" data-end="0.97" style="--c:#ff86ae">
-      <div class="chip">
-        <span class="when">SOUL</span>
-        <h2 data-i18n="s_h2">Not a bot. A friend.</h2>
-        <p data-i18n="s_p">Witty, wry, warm when it matters. She reads your mood and answers accordingly — no bullshit.</p>
+    <div class="caption" data-ch="HOME">
+      <div class="in2">
+        <span class="kick">HOME</span>
+        <h2 data-en="Your home gets a screen. And a voice." data-he="הבית שלך מקבל מסך. ומקבל קול.">Your home gets a screen. And a voice.</h2>
+        <p data-en="One tablet on the wall runs her full-screen: clock, weather, your day, and live controls for every light, AC, shutter and lock. Nine device families, one screen." data-he="טאבלט אחד על הקיר, ואלכס במסך מלא: שעון, מזג אוויר, היום שלך, ושליטה חיה בכל אור, מזגן, תריס ומנעול. תשע משפחות מכשירים, מסך אחד.">One tablet on the wall runs her full-screen: clock, weather, your day, and live controls for every light, AC, shutter and lock. Nine device families, one screen.</p>
+      </div>
+    </div>
+
+    <div class="caption" data-ch="INTERFACES">
+      <div class="in2">
+        <span class="kick">INTERFACES</span>
+        <h2 data-en="Every answer arrives with an interface to match." data-he="כל תשובה מגיעה עם ממשק שמתאים לה.">Every answer arrives with an interface to match.</h2>
+        <p data-en="She doesn't read lists out loud. She opens real panels inside the HUD — chats, a three-pane mail client, floating windows, a live 24-bar spectrum — in Hebrew and in English." data-he="היא לא מקריאה לך רשימות. היא פותחת ממשקים אמיתיים בתוך ה-HUD — שיחות, מייל בשלוש חלוניות, חלונות צפים, וספקטרום חי של 24 עמודות — בעברית ובאנגלית.">She doesn't read lists out loud. She opens real panels inside the HUD — chats, a three-pane mail client, floating windows, a live 24-bar spectrum — in Hebrew and in English.</p>
+      </div>
+    </div>
+
+    <div class="caption" data-ch="AUTONOMY">
+      <div class="in2">
+        <span class="kick">AUTONOMY</span>
+        <h2 data-en="She acts. You approve." data-he="היא פועלת. ההחלטה שלך.">She acts. You approve.</h2>
+        <p data-en="Seven agents take work off her hands and keep running in the background while you talk. Anything outbound is prepared in full — then waits for one tap." data-he="שבעה סוכנים לוקחים ממנה עבודה וממשיכים לרוץ ברקע בזמן שאתה מדבר. כל מה שיוצא החוצה מוכן עד הסוף — ואז מחכה לנגיעה אחת שלך.">Seven agents take work off her hands and keep running in the background while you talk. Anything outbound is prepared in full — then waits for one tap.</p>
+      </div>
+    </div>
+
+    <div class="caption" data-ch="TRUST">
+      <div class="in2">
+        <span class="kick">TRUST</span>
+        <h2 data-en="No credit for work she didn't do." data-he="לא מספרת שעשתה — עושה.">No credit for work she didn't do.</h2>
+        <p data-en="Every claim is checked against what actually ran. Nothing irreversible without your tap, and a voice she doesn't know gets no private details." data-he="כל הצהרה נבדקת מול מה שבאמת רץ. שום דבר בלתי הפיך בלי נגיעה שלך, וקול שהיא לא מכירה לא מקבל פרטים פרטיים.">Every claim is checked against what actually ran. Nothing irreversible without your tap, and a voice she doesn't know gets no private details.</p>
       </div>
     </div>
   </div>
 </div>
+<section class="sec" id="path" style="--c:#4fd8ff">
+  <div class="wrap">
+    <span class="kicker rev" data-en="PIPELINE" data-he="צינור העיבוד">PIPELINE</span>
+    <h2 class="rev" style="--d:.05s" data-en="The path of one sentence" data-he="המסלול של משפט אחד">The path of one sentence</h2>
+    <p class="lede rev" style="--d:.1s" data-en="From the air in your room to her voice coming back. Ten stations — and at each one, what happens when it breaks." data-he="מהאוויר בחדר שלך ועד הקול שחוזר. עשר תחנות — ובכל אחת, מה קורה כשהיא נופלת.">From the air in your room to her voice coming back. Ten stations — and at each one, what happens when it breaks.</p>
+
+    <div class="stats rev" style="--d:.15s">
+      <div class="stat"><b class="ltr">~1.5s</b><span data-en="from your last word to her first" data-he="מהמילה האחרונה שלך לראשונה שלה">from your last word to her first</span></div>
+      <div class="stat"><b class="ltr">~1s</b><span data-en="from spoken request to action" data-he="מבקשה מדוברת לפעולה">from spoken request to action</span></div>
+      <div class="stat"><b class="ltr">0.3–0.9s</b><span data-en="intent recognition, warm" data-he="זיהוי כוונה, חם">intent recognition, warm</span></div>
+      <div class="stat"><b class="ltr">18</b><span data-en="AI engines in the chain" data-he="מנועי AI בשרשרת">AI engines in the chain</span></div>
+    </div>
+
+    <div class="row-btns rev" style="--d:.2s">
+      <button class="btn" id="killEngine" data-ripple data-en="Kill an engine" data-he="להפיל מנוע">Kill an engine</button>
+      <button class="btn" id="killNet" data-ripple data-en="Cut the network" data-he="לנתק את הרשת">Cut the network</button>
+      <span class="badge i" data-en="ILLUSTRATION" data-he="הדגמה">ILLUSTRATION</span>
+    </div>
+
+    <div class="flow rev" id="flow" style="--d:.25s">
+      <div class="node" data-n="1">
+        <div class="dot">01</div>
+        <div>
+          <h4 data-en="Microphone" data-he="מיקרופון">Microphone</h4>
+          <div class="does" data-en="Echo cancellation on the listening path keeps the mic live while she talks — so you can cut in." data-he="ביטול הד בערוץ ההאזנה משאיר את המיקרופון פתוח גם כשהיא מדברת — כדי שתוכל להיכנס לדבריה.">Echo cancellation on the listening path keeps the mic live while she talks — so you can cut in.</div>
+        </div>
+      </div>
+      <div class="node" data-n="2">
+        <div class="dot">02</div>
+        <div>
+          <h4 data-en="Two recognition passes, in parallel" data-he="שני מעברי זיהוי, במקביל">Two recognition passes, in parallel</h4>
+          <div class="does" data-en="Four speech-recognition engines behind the mic; eleven languages recognized by ear." data-he="ארבעה מנועי זיהוי דיבור מאחורי המיקרופון; אחת-עשרה שפות מזוהות לפי אוזן.">Four speech-recognition engines behind the mic; eleven languages recognized by ear.</div>
+          <div class="fails"><b data-en="ON FAILURE" data-he="בכשל">ON FAILURE</b> <span data-en="the next engine in line takes the audio." data-he="המנוע הבא בתור מקבל את האודיו.">the next engine in line takes the audio.</span></div>
+        </div>
+      </div>
+      <div class="node" data-n="3">
+        <div class="dot">03</div>
+        <div>
+          <h4 data-en="Bilingual resolver" data-he="פותר דו-לשוני">Bilingual resolver</h4>
+          <div class="does" data-en="Takes over when one utterance mixes both scripts. Clean Hebrew short-circuits to the fast path with no added delay." data-he="נכנס לפעולה כשמשפט אחד מערבב שתי שפות. עברית נקייה עוברת במסלול המהיר בלי תוספת זמן.">Takes over when one utterance mixes both scripts. Clean Hebrew short-circuits to the fast path with no added delay.</div>
+        </div>
+      </div>
+      <div class="node" data-n="4">
+        <div class="dot">04</div>
+        <div>
+          <h4 data-en="Echo guard + noise filter" data-he="מגן הד + מסנן רעש">Echo guard + noise filter</h4>
+          <div class="does" data-en="Screens every transcript before she reacts, so her own speech, room noise and half-words can't open a turn." data-he="מסנן כל תמלול לפני שהיא מגיבה, כדי שהדיבור שלה עצמה, רעשי חדר וחצאי מילים לא יפתחו תור.">Screens every transcript before she reacts, so her own speech, room noise and half-words can't open a turn.</div>
+        </div>
+      </div>
+      <div class="node" data-n="5">
+        <div class="dot">05</div>
+        <div>
+          <h4 data-en="Language lock" data-he="נעילת שפה">Language lock</h4>
+          <div class="does" data-en="Decided per request, not suggested to the model. Hebrew in, Hebrew out — and a Hebrew sentence with one English word stays Hebrew." data-he="מוכרעת לכל בקשה, לא מוצעת למודל. עברית נכנסת, עברית יוצאת — ומשפט עברי עם מילה אחת באנגלית נשאר עברית.">Decided per request, not suggested to the model. Hebrew in, Hebrew out — and a Hebrew sentence with one English word stays Hebrew.</div>
+        </div>
+      </div>
+      <div class="node" data-n="6">
+        <div class="dot">06</div>
+        <div>
+          <h4 data-en="Intent classifier" data-he="מסווג כוונות">Intent classifier</h4>
+          <div class="does" data-en="Eighteen intents — weather, expenses, messages, music, reports, home control. 0.3–0.9s warm." data-he="שמונה-עשרה כוונות — מזג אוויר, הוצאות, הודעות, מוזיקה, דוחות, שליטה בבית. 0.3–0.9 שנייה במצב חם.">Eighteen intents — weather, expenses, messages, music, reports, home control. 0.3–0.9s warm.</div>
+          <div class="fails"><b data-en="LOW CONFIDENCE" data-he="ביטחון נמוך">LOW CONFIDENCE</b> <span data-en="takes the slower careful path instead of guessing." data-he="עוברת למסלול הזהיר והאיטי במקום לנחש.">takes the slower careful path instead of guessing.</span></div>
+        </div>
+      </div>
+      <div class="node" data-n="7">
+        <div class="dot">07</div>
+        <div>
+          <h4 data-en="Multi-intent split" data-he="פיצול כוונות">Multi-intent split</h4>
+          <div class="does" data-en="&ldquo;Put on music and send me the expense report&rdquo; completes both, not the first one only." data-he="״שים מוזיקה ותשלחי לי את דוח ההוצאות״ — שתי הפעולות מתבצעות, לא רק הראשונה.">&ldquo;Put on music and send me the expense report&rdquo; completes both, not the first one only.</div>
+        </div>
+      </div>
+      <div class="node" data-n="8">
+        <div class="dot">08</div>
+        <div>
+          <h4 data-en="Engine chain" data-he="שרשרת מנועים">Engine chain</h4>
+          <div class="does" data-en="Eighteen AI engines benchmarked head to head — for speed, and for actually carrying out actions. The winner answers, the rest wait behind it. Free capacity by default; paid only when the request is too large or the free lane runs out." data-he="שמונה-עשר מנועי AI נמדדו זה מול זה — על מהירות, ועל היכולת לבצע פעולות בפועל. המנצח עונה, השאר ממתינים מאחוריו. קיבולת חינמית כברירת מחדל; בתשלום רק כשהבקשה גדולה מדי או שהנתיב החינמי נגמר.">Eighteen AI engines benchmarked head to head — for speed, and for actually carrying out actions. The winner answers, the rest wait behind it. Free capacity by default; paid only when the request is too large or the free lane runs out.</div>
+          <div class="fails"><b data-en="ON FAILURE" data-he="בכשל">ON FAILURE</b> <span id="engMsg" data-en="rate-limited or slow rolls to the next engine mid-answer." data-he="מנוע חסום או איטי מתגלגל לבא בתור באמצע התשובה.">rate-limited or slow rolls to the next engine mid-answer.</span></div>
+        </div>
+      </div>
+      <div class="node" data-n="9">
+        <div class="dot">09</div>
+        <div>
+          <h4 data-en="Claim check" data-he="בדיקת הצהרות">Claim check</h4>
+          <div class="does" data-en="Every claim verified against what actually ran. If she says a mail went out and no send succeeded, she is pushed to send it — or to say plainly that it didn't happen." data-he="כל הצהרה נבדקת מול מה שבאמת רץ. אם היא אומרת שמייל נשלח ואף שליחה לא הצליחה, היא נדחפת לשלוח אותו — או לומר בפירוש שזה לא קרה.">Every claim verified against what actually ran. If she says a mail went out and no send succeeded, she is pushed to send it — or to say plainly that it didn't happen.</div>
+        </div>
+      </div>
+      <div class="node" data-n="10">
+        <div class="dot">10</div>
+        <div>
+          <h4 data-en="Voice ladder" data-he="סולם הקול">Voice ladder</h4>
+          <div class="does" data-en="Exactly one voice request in flight; the next sentence is synthesized while the current one plays. A throttled provider is set aside for a cooldown instead of retried." data-he="בקשת קול אחת בכל רגע; המשפט הבא מסונתז בזמן שהנוכחי מתנגן. ספק חסום מושם בצד לקירור במקום לנסות אותו שוב.">Exactly one voice request in flight; the next sentence is synthesized while the current one plays. A throttled provider is set aside for a cooldown instead of retried.</div>
+          <div class="ladder" id="ladder">
+            <div class="tier" data-t="1"><i></i><span data-en="Premium neural voice" data-he="קול נוירונלי פרימיום">Premium neural voice</span><em data-en="leads" data-he="מוביל">leads</em></div>
+            <div class="tier" data-t="2"><i></i><span data-en="Free cloud voice" data-he="קול ענן חינמי">Free cloud voice</span><em data-en="backs it" data-he="גיבוי">backs it</em></div>
+            <div class="tier floor" data-t="3"><i></i><span data-en="On-device, fully offline" data-he="על המכשיר, לגמרי אופליין">On-device, fully offline</span><em data-en="the floor" data-he="הרצפה">the floor</em></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="who" style="--c:#ffb4d8">
+  <div class="wrap">
+    <span class="kicker rev" data-en="IDENTITY · ON-DEVICE" data-he="זהות · על המכשיר">IDENTITY · ON-DEVICE</span>
+    <h2 class="rev" style="--d:.05s" data-en="Who's speaking" data-he="מי מדבר">Who's speaking</h2>
+    <p class="lede rev" style="--d:.1s" data-en="She doesn't ask who you are. She recognizes the voice — and answers a different person differently. Pick a card." data-he="היא לא שואלת מי אתה. היא מזהה את הקול — ועונה לכל אדם אחרת. בחר כרטיס.">She doesn't ask who you are. She recognizes the voice — and answers a different person differently. Pick a card.</p>
+
+    <div class="spk rev" id="spk" style="--d:.15s">
+      <button class="spkc" data-k="a" style="--sc:#4fd8ff">
+        <span class="name">SPEAKER A</span>
+        <div class="print" data-print="a"></div>
+        <dl class="kv">
+          <dt data-en="Enrolled" data-he="נרשם">Enrolled</dt><dd data-en="yes · 14 phrases" data-he="כן · 14 משפטים">yes · 14 phrases</dd>
+          <dt data-en="Language" data-he="שפה">Language</dt><dd data-en="Hebrew" data-he="עברית">Hebrew</dd>
+          <dt data-en="Addressed as" data-he="פנייה">Addressed as</dt><dd data-en="masculine" data-he="לשון זכר">masculine</dd>
+          <dt data-en="Memory" data-he="זיכרון">Memory</dt><dd data-en="own namespace" data-he="מרחב שמות פרטי">own namespace</dd>
+        </dl>
+        <ul class="scope" data-scope>
+          <li data-en="Facts and notes" data-he="עובדות והערות">Facts and notes</li>
+          <li data-en="Conversation history" data-he="היסטוריית שיחה">Conversation history</li>
+          <li data-en="Owner-level private data" data-he="נתונים פרטיים של הבעלים">Owner-level private data</li>
+        </ul>
+      </button>
+      <button class="spkc" data-k="b" style="--sc:#c9a0ff">
+        <span class="name">SPEAKER B</span>
+        <div class="print" data-print="b"></div>
+        <dl class="kv">
+          <dt data-en="Enrolled" data-he="נרשם">Enrolled</dt><dd data-en="yes · 14 phrases" data-he="כן · 14 משפטים">yes · 14 phrases</dd>
+          <dt data-en="Language" data-he="שפה">Language</dt><dd data-en="English" data-he="אנגלית">English</dd>
+          <dt data-en="Addressed as" data-he="פנייה">Addressed as</dt><dd data-en="neutral" data-he="ניטרלי">neutral</dd>
+          <dt data-en="Memory" data-he="זיכרון">Memory</dt><dd data-en="own namespace" data-he="מרחב שמות פרטי">own namespace</dd>
+        </dl>
+        <ul class="scope" data-scope>
+          <li data-en="Facts and notes" data-he="עובדות והערות">Facts and notes</li>
+          <li data-en="Conversation history" data-he="היסטוריית שיחה">Conversation history</li>
+          <li class="out" data-en="Owner-level private data" data-he="נתונים פרטיים של הבעלים">Owner-level private data</li>
+        </ul>
+      </button>
+      <button class="spkc sel" data-k="u" style="--sc:#ffb4d8">
+        <span class="name">UNKNOWN VOICE</span>
+        <div class="print" data-print="u"></div>
+        <dl class="kv">
+          <dt data-en="Enrolled" data-he="נרשם">Enrolled</dt><dd data-en="no" data-he="לא">no</dd>
+          <dt data-en="Language" data-he="שפה">Language</dt><dd data-en="detected per sentence" data-he="מזוהה לכל משפט">detected per sentence</dd>
+          <dt data-en="Addressed as" data-he="פנייה">Addressed as</dt><dd data-en="neutral" data-he="ניטרלי">neutral</dd>
+          <dt data-en="Memory" data-he="זיכרון">Memory</dt><dd data-en="none kept" data-he="לא נשמר">none kept</dd>
+        </dl>
+        <ul class="scope" data-scope>
+          <li data-en="Still helpful, still answers" data-he="עדיין עוזרת, עדיין עונה">Still helpful, still answers</li>
+          <li class="out" data-en="Volunteers the owner's details" data-he="מספרת פרטים של הבעלים">Volunteers the owner's details</li>
+          <li class="out" data-en="Runs sensitive actions" data-he="מבצעת פעולות רגישות">Runs sensitive actions</li>
+        </ul>
+      </button>
+    </div>
+
+    <div class="gram rev" style="--d:.2s">
+      <span class="kicker" data-en="HEBREW GRAMMATICAL GENDER" data-he="מגדר דקדוקי בעברית">HEBREW GRAMMATICAL GENDER</span>
+      <p style="font-size:.86rem;color:var(--muted);line-height:1.65;margin-top:8px" data-en="Hebrew conjugates the person you're talking to. She locks the form per owner — and a post-processor fixes the verb and adds vowel marks so the voice actually pronounces it right. Flip it:" data-he="בעברית הפועל מוטה לפי מי שמדברים אליו. היא נועלת את הצורה לכל בעלים — ומעבד סופי מתקן את הפועל ומוסיף ניקוד כדי שהקול באמת יבטא נכון. תחליף:">Hebrew conjugates the person you're talking to. She locks the form per owner — and a post-processor fixes the verb and adds vowel marks so the voice actually pronounces it right. Flip it:</p>
+      <div class="seg">
+        <button id="gm" class="on" data-en="masculine" data-he="זכר">masculine</button>
+        <button id="gf" data-en="feminine" data-he="נקבה">feminine</button>
+      </div>
+      <div class="say" id="gramSay" dir="rtl">מה שלומך? הכנתי לך את הדוח, תרצה שאשלח?</div>
+      <em style="font-style:normal;font-size:.66rem;color:var(--dim);display:block;margin-top:8px" data-en="Same sentence, correct conjugation. This is the actual thing she gets right." data-he="אותו משפט, הטיה נכונה. זה בדיוק מה שהיא עושה נכון.">Same sentence, correct conjugation. This is the actual thing she gets right.</em>
+    </div>
+
+    <div class="sub" data-en="HOW IT WORKS" data-he="איך זה עובד">HOW IT WORKS</div>
+    <div class="stats rev">
+      <div class="stat"><b class="ltr">512</b><span data-en="dimensions per voiceprint" data-he="מידות בטביעת קול">dimensions per voiceprint</span></div>
+      <div class="stat"><b class="ltr">44.1 kHz</b><span data-en="capture, enrollment and live" data-he="דגימה, רישום ושידור חי">capture, enrollment and live</span></div>
+      <div class="stat"><b class="ltr">20/20</b><span data-en="correct IDs, leave-one-out" data-he="זיהויים נכונים בבדיקה">correct IDs, leave-one-out</span></div>
+      <div class="stat"><b class="ltr">0</b><span data-en="biometric data uploaded" data-he="נתונים ביומטריים שעולים לענן">biometric data uploaded</span></div>
+    </div>
+
+    <div class="tri rev" style="--d:.1s">
+      <div>
+        <h4 data-en="KEPT PER PERSON" data-he="נשמר לכל אדם">KEPT PER PERSON</h4>
+        <p data-en="Facts, notes and conversation history, in a private namespace. Two identity layers: a fixed creator she never forgets, and an owner she serves." data-he="עובדות, הערות והיסטוריית שיחה, במרחב שמות פרטי. שתי שכבות זהות: יוצר קבוע שהיא לא שוכחת, ובעלים שהיא משרתת.">Facts, notes and conversation history, in a private namespace. Two identity layers: a fixed creator she never forgets, and an owner she serves.</p>
+      </div>
+      <div>
+        <h4 data-en="NEVER CROSSES" data-he="לא חוצה">NEVER CROSSES</h4>
+        <p data-en="Nothing learned about one person surfaces in another person's answer. Speaker lock keeps her with whoever is talking, so a mumble in a loud room doesn't switch who she thinks she's with." data-he="שום דבר שנלמד על אדם אחד לא עולה בתשובה לאדם אחר. נעילת דובר משאירה אותה עם מי שמדבר, כך שמלמול בחדר רועש לא מחליף לה את הזהות.">Nothing learned about one person surfaces in another person's answer. Speaker lock keeps her with whoever is talking, so a mumble in a loud room doesn't switch who she thinks she's with.</p>
+      </div>
+      <div>
+        <h4 data-en="NEVER LEAVES THE DEVICE" data-he="לא עוזב את המכשיר">NEVER LEAVES THE DEVICE</h4>
+        <p data-en="The voiceprint match itself — on the CPU, no GPU, no cloud. Every fact she remembers is editable in one readable list, by tap or just out loud." data-he="ההשוואה של טביעת הקול עצמה — על המעבד, בלי כרטיס גרפי, בלי ענן. כל עובדה שהיא זוכרת ניתנת לעריכה ברשימה אחת קריאה, בנגיעה או פשוט בקול.">The voiceprint match itself — on the CPU, no GPU, no cloud. Every fact she remembers is editable in one readable list, by tap or just out loud.</p>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="sec" id="house" style="--c:#4fe3b0">
+  <div class="wrap">
+    <span class="kicker rev" data-en="HOME · 9 DEVICE FAMILIES" data-he="בית · 9 משפחות מכשירים">HOME · 9 DEVICE FAMILIES</span>
+    <h2 class="rev" style="--d:.05s" data-en="The house, room by room" data-he="הבית, חדר אחר חדר">The house, room by room</h2>
+    <p class="lede rev" style="--d:.1s" data-en="A tablet on the wall, her orb in the middle of it, and every device in the house behind one screen. Tap a room to isolate it." data-he="טאבלט על הקיר, האורב שלה במרכזו, וכל מכשיר בבית מאחורי מסך אחד. גע בחדר כדי לבודד אותו.">A tablet on the wall, her orb in the middle of it, and every device in the house behind one screen. Tap a room to isolate it.</p>
+
+    <div class="plan rev" id="plan" style="--d:.15s">
+      <button class="room" data-r="0"><span class="g">◼</span><b data-en="Living room" data-he="סלון">Living room</b></button>
+      <button class="room" data-r="1"><span class="g">◻</span><b data-en="Kitchen" data-he="מטבח">Kitchen</b></button>
+      <button class="room" data-r="2"><span class="g">▣</span><b data-en="Bedroom" data-he="חדר שינה">Bedroom</b></button>
+      <button class="room" data-r="3"><span class="g">▤</span><b data-en="Kids' room" data-he="חדר ילדים">Kids' room</b></button>
+      <button class="room" data-r="4"><span class="g">▥</span><b data-en="Office" data-he="חדר עבודה">Office</b></button>
+      <button class="room" data-r="5"><span class="g">▦</span><b data-en="Porch" data-he="מרפסת">Porch</b></button>
+    </div>
+
+    <div class="fam rev" id="fam" style="--d:.2s">
+      <span data-en="lights" data-he="אורות">lights</span>
+      <span data-en="switches" data-he="מתגים">switches</span>
+      <span data-en="sensors" data-he="חיישנים">sensors</span>
+      <span data-en="covers" data-he="תריסים">covers</span>
+      <span data-en="locks" data-he="מנעולים">locks</span>
+      <span data-en="climate" data-he="מיזוג">climate</span>
+      <span data-en="fans" data-he="מאווררים">fans</span>
+      <span data-en="vacuums" data-he="שואבים">vacuums</span>
+      <span data-en="cameras" data-he="מצלמות">cameras</span>
+    </div>
+
+    <div class="row-btns rev" style="--d:.25s">
+      <button class="btn solid" id="goodnight" data-ripple data-en="Good night" data-he="לילה טוב">Good night</button>
+      <button class="btn" id="allon" data-ripple data-en="Wake the house" data-he="להעיר את הבית">Wake the house</button>
+      <span class="badge i" data-en="ILLUSTRATION" data-he="הדגמה">ILLUSTRATION</span>
+    </div>
+
+    <div class="sub" data-en="A REAL AC REMOTE — NOT A TOGGLE" data-he="שלט מזגן אמיתי — לא מתג">A REAL AC REMOTE — NOT A TOGGLE</div>
+    <div class="remote rev">
+      <div class="temp num" id="acTemp">22<small>°</small></div>
+      <div class="grid">
+        <button id="acDown" data-ripple>−</button>
+        <button id="acUp" data-ripple>+</button>
+        <button class="mode-b on" data-m="cool" data-en="cool" data-he="קירור">cool</button>
+        <button class="mode-b" data-m="heat" data-en="heat" data-he="חימום">heat</button>
+        <button class="mode-b" data-m="dry" data-en="dry" data-he="ייבוש">dry</button>
+        <button class="mode-b" data-m="fan" data-en="fan" data-he="אוורור">fan</button>
+      </div>
+      <div class="grid" style="margin-top:8px">
+        <button class="fan-b" data-f="1">1</button>
+        <button class="fan-b" data-f="2">2</button>
+        <button class="fan-b on" data-f="3">3</button>
+        <button class="fan-b" data-f="4">4</button>
+      </div>
+      <div class="say-line" id="acSay" data-copy>
+        <span id="acSayTxt">&ldquo;AC, cooling, 22, high fan&rdquo;</span>
+        <em data-en="THE MATCHING SPOKEN PHRASE · TAP TO COPY" data-he="המשפט המדובר המתאים · גע להעתקה">THE MATCHING SPOKEN PHRASE · TAP TO COPY</em>
+      </div>
+    </div>
+
+    <div class="sub" data-en="ONBOARDING A UNIT SHE'S NEVER SEEN" data-he="חיבור יחידה שהיא לא מכירה">ONBOARDING A UNIT SHE'S NEVER SEEN</div>
+    <ol class="steps rev">
+      <li data-en="Type a brand." data-he="הקלד מותג.">Type a brand.</li>
+      <li data-en="Search 356 AC models from 129 makers — Israeli brands included." data-he="חיפוש ב-356 דגמי מזגן מ-129 יצרנים — כולל מותגים ישראליים.">Search 356 AC models from 129 makers — Israeli brands included.</li>
+      <li data-en="Import the code set." data-he="ייבוא מערכת הקודים.">Import the code set.</li>
+      <li data-en="Fire a test command, and she asks whether the unit responded." data-he="שליחת פקודת בדיקה, והיא שואלת אם היחידה הגיבה.">Fire a test command, and she asks whether the unit responded.</li>
+      <li data-en="No? Next candidate. Nothing matches? She learns your own remote, button by button." data-he="לא? המועמד הבא. שום דבר לא מתאים? היא לומדת את השלט שלך, כפתור אחרי כפתור.">No? Next candidate. Nothing matches? She learns your own remote, button by button.</li>
+    </ol>
+
+    <div class="tri rev">
+      <div>
+        <h4 data-en="SHUTTERS SPEAK RADIO" data-he="תריסים מדברים רדיו">SHUTTERS SPEAK RADIO</h4>
+        <p data-en="433 MHz, not infrared. She sweeps for the frequency, learns up / stop / down, and puts real ▲ ■ ▼ on the tile." data-he="‏433 מגה-הרץ, לא אינפרה-אדום. היא סורקת את התדר, לומדת מעלה / עצור / מטה, ושמה ▲ ■ ▼ אמיתיים על האריח.">433 MHz, not infrared. She sweeps for the frequency, learns up / stop / down, and puts real ▲ ■ ▼ on the tile.</p>
+      </div>
+      <div>
+        <h4 data-en="3000+ INTEGRATIONS" data-he="‏3000+ אינטגרציות">3000+ INTEGRATIONS</h4>
+        <p data-en="She sits above Home Assistant, so Zigbee, Z-Wave, Matter, Tuya, Shelly and Hue are all reachable. Camera video is proxied through her own server, so home credentials never leave it." data-he="היא יושבת מעל Home Assistant, כך ש-Zigbee, Z-Wave, Matter, Tuya, Shelly ו-Hue כולם נגישים. וידאו ממצלמות עובר דרך השרת שלה, כך שפרטי הגישה לבית לא יוצאים ממנו.">She sits above Home Assistant, so Zigbee, Z-Wave, Matter, Tuya, Shelly and Hue are all reachable. Camera video is proxied through her own server, so home credentials never leave it.</p>
+      </div>
+      <div>
+        <h4 data-en="AWAY, IN THREE HOPS" data-he="מרחוק, בשלוש קפיצות">AWAY, IN THREE HOPS</h4>
+        <p data-en="Local route first → her own cloud → the always-on unit at home runs it on the LAN and reports back. No VPN, no router setup." data-he="קודם מסלול מקומי ← הענן שלה ← היחידה שדולקת תמיד בבית מבצעת ברשת המקומית ומדווחת חזרה. בלי VPN, בלי הגדרות ראוטר.">Local route first → her own cloud → the always-on unit at home runs it on the LAN and reports back. No VPN, no router setup.</p>
+      </div>
+    </div>
+
+    <div class="sub" data-en="AUTOMATIONS YOU CREATE BY SPEAKING" data-he="אוטומציות שאתה יוצר בדיבור">AUTOMATIONS YOU CREATE BY SPEAKING</div>
+    <div class="autos rev">
+      <div class="auto" data-copy><b>DAILY</b><p data-en="&ldquo;Every morning at seven, brief me.&rdquo;" data-he="״כל בוקר בשבע, תעדכני אותי.״">&ldquo;Every morning at seven, brief me.&rdquo;</p></div>
+      <div class="auto" data-copy><b>EVERY-N-HOURS</b><p data-en="&ldquo;Every three hours, check the weather.&rdquo;" data-he="״כל שלוש שעות, תבדקי את מזג האוויר.״">&ldquo;Every three hours, check the weather.&rdquo;</p></div>
+      <div class="auto" data-copy><b>WEEKLY</b><p data-en="&ldquo;Every Sunday evening, summarize the week's spending.&rdquo;" data-he="״כל יום ראשון בערב, תסכמי את ההוצאות של השבוע.״">&ldquo;Every Sunday evening, summarize the week's spending.&rdquo;</p></div>
+      <div class="auto" data-copy><b>ON INCOMING MAIL</b><p data-en="&ldquo;When mail comes in from the bank, summarize it and ping me.&rdquo;" data-he="״כשמגיע מייל מהבנק, תסכמי ותתריעי לי.״">&ldquo;When mail comes in from the bank, summarize it and ping me.&rdquo;</p></div>
+    </div>
+
+    <div class="stats rev">
+      <div class="stat"><b class="ltr">3000+</b><span data-en="integrations reachable" data-he="אינטגרציות נגישות">integrations reachable</span></div>
+      <div class="stat"><b class="ltr">356</b><span data-en="AC models onboard-ready" data-he="דגמי מזגן מוכנים לחיבור">AC models onboard-ready</span></div>
+      <div class="stat"><b class="ltr">129</b><span data-en="AC brands" data-he="מותגי מזגנים">AC brands</span></div>
+      <div class="stat"><b class="ltr">60s</b><span data-en="live refresh across the hub" data-he="רענון חי בכל המסך">live refresh across the hub</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="panels" style="--c:#cfe0ff">
+  <div class="wrap">
+    <span class="kicker rev" data-en="INTERFACES · RTL AND LTR" data-he="ממשקים · ימין-לשמאל ולהיפך">INTERFACES · RTL AND LTR</span>
+    <h2 class="rev" style="--d:.05s" data-en="Panels, not paragraphs" data-he="ממשק, לא הקראה">Panels, not paragraphs</h2>
+    <p class="lede rev" style="--d:.1s" data-en="She doesn't read your inbox out loud. She opens the panel. Every row below is a placeholder — the layout is the point." data-he="היא לא מקריאה לך את תיבת הדואר. היא פותחת את הממשק. כל שורה כאן היא דוגמה — המבנה הוא העיקר.">She doesn't read your inbox out loud. She opens the panel. Every row below is a placeholder — the layout is the point.</p>
+
+    <div class="tabs rev" id="tabs" style="--d:.15s">
+      <button class="on" data-p="chats">CHATS</button>
+      <button data-p="mail">MAIL</button>
+      <button data-p="media">MEDIA</button>
+    </div>
+
+    <div class="deck rev" id="deck" style="--d:.2s">
+      <div class="pop hid" id="pop">
+        <div class="bar" id="popBar">
+          <b data-en="POP-OUT · DRAG ME" data-he="חלון צף · גרור אותי">POP-OUT · DRAG ME</b>
+          <button id="popDock" title="dock">⤓</button>
+        </div>
+        <div class="bod" data-en="A conversation detached into a floating window. Drag the bar, resize from the corner, dock it back. It never blocks the HUD behind it, and it remembers where you left it." data-he="שיחה שנתלשה לחלון צף. גרור את הסרגל, שנה גודל מהפינה, החזר למקום. הוא לא חוסם את ה-HUD מאחוריו, והוא זוכר איפה השארת אותו.">A conversation detached into a floating window. Drag the bar, resize from the corner, dock it back. It never blocks the HUD behind it, and it remembers where you left it.</div>
+          <div class="rz" id="popRz"></div>
+      </div>
+
+      <div class="pane on" data-pane="chats">
+        <div class="swatch" id="swatch"></div>
+        <div id="chatRows"></div>
+      </div>
+
+      <div class="pane" data-pane="mail">
+        <div class="mail3">
+          <div class="fld">
+            <b data-en="Inbox" data-he="דואר נכנס">Inbox</b>
+            <span data-en="Flagged" data-he="מסומן">Flagged</span>
+            <span data-en="Sent" data-he="נשלח">Sent</span>
+            <span data-en="Archive" data-he="ארכיון">Archive</span>
+            <span data-en="Reports" data-he="דוחות">Reports</span>
+          </div>
+          <div id="mailRows"></div>
+          <div>
+            <div style="font-size:.8rem;font-weight:700" data-en="Message subject placeholder" data-he="נושא הודעה לדוגמה">Message subject placeholder</div>
+            <div class="body-mock" style="margin-top:10px">
+              <span class="ph"></span><span class="ph w7"></span><span class="ph"></span><span class="ph w4"></span>
+              <p style="margin-top:10px;font-size:.72rem;color:var(--dim)" data-en="Real HTML body with inline images rendered. Attachments one tap from opening. Reply, reply-all, forward, search, flag, archive, delete — where you expect them." data-he="גוף HTML אמיתי עם תמונות מוטבעות. קבצים מצורפים בנגיעה אחת. מענה, מענה לכולם, העברה, חיפוש, סימון, ארכוב, מחיקה — בדיוק איפה שאתה מצפה.">Real HTML body with inline images rendered. Attachments one tap from opening. Reply, reply-all, forward, search, flag, archive, delete — where you expect them.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pane" data-pane="media">
+        <div class="spec" id="spec"></div>
+        <div class="disc" id="disc"></div>
+        <p style="font-size:.78rem;color:var(--muted);line-height:1.65;margin-top:14px;text-align:center" data-en="A 24-bar spectrum, a play disc that breathes with the track's energy, and a full-screen music-reactive background running behind everything else." data-he="ספקטרום של 24 עמודות, דיסק נגינה שנושם עם עוצמת השיר, ורקע שמגיב למוזיקה שרץ מאחורי הכל.">A 24-bar spectrum, a play disc that breathes with the track's energy, and a full-screen music-reactive background running behind everything else.</p>
+      </div>
+    </div>
+
+    <div class="row-btns rev">
+      <button class="btn" id="popBtn" data-ripple data-en="Pop out a conversation" data-he="לתלוש שיחה לחלון">Pop out a conversation</button>
+      <span class="badge i" data-en="ILLUSTRATION · PLACEHOLDER ROWS" data-he="הדגמה · שורות דוגמה">ILLUSTRATION · PLACEHOLDER ROWS</span>
+    </div>
+
+    <div class="tri rev">
+      <div>
+        <h4 data-en="NOTIFICATION REPLY" data-he="מענה מתוך התראה">NOTIFICATION REPLY</h4>
+        <p data-en="A new message arrives as a card with a reply field built in. Start typing and the card stops counting down to dismiss. Mute one chat for a set time, or indefinitely, from the same card." data-he="הודעה חדשה מגיעה ככרטיס עם שדה מענה מוטמע. מתחילים להקליד והכרטיס מפסיק לספור לסגירה. השתקת שיחה לזמן מוגדר, או לתמיד, מאותו כרטיס.">A new message arrives as a card with a reply field built in. Start typing and the card stops counting down to dismiss. Mute one chat for a set time, or indefinitely, from the same card.</p>
+      </div>
+      <div>
+        <h4 data-en="TALK TO THE LAYOUT" data-he="לדבר עם הממשק">TALK TO THE LAYOUT</h4>
+        <p data-en="&ldquo;Minimize the player.&rdquo; &ldquo;Close WhatsApp.&rdquo; The interface takes voice commands the same way she does." data-he="״תקטיני את הנגן.״ ״תסגרי את וואטסאפ.״ הממשק מקבל פקודות קוליות בדיוק כמוה.">&ldquo;Minimize the player.&rdquo; &ldquo;Close WhatsApp.&rdquo; The interface takes voice commands the same way she does.</p>
+      </div>
+      <div>
+        <h4 data-en="ELASTIC AND BILINGUAL" data-he="גמיש ודו-לשוני">ELASTIC AND BILINGUAL</h4>
+        <p data-en="Every panel localized and mirrored cleanly for right-to-left. Wide screens spread to multi-pane; narrow ones collapse to one pane at a time with a clear way back." data-he="כל פאנל מתורגם ומשוקף נכון לימין-לשמאל. מסכים רחבים נפרשים לכמה חלוניות; צרים מתכנסים לחלונית אחת עם דרך חזרה ברורה.">Every panel localized and mirrored cleanly for right-to-left. Wide screens spread to multi-pane; narrow ones collapse to one pane at a time with a clear way back.</p>
+      </div>
+    </div>
+
+    <div class="stats rev">
+      <div class="stat"><b class="ltr">~0.7s</b><span data-en="warm panel re-open" data-he="פתיחה חוזרת של פאנל">warm panel re-open</span></div>
+      <div class="stat"><b class="ltr">3</b><span data-en="panes in the mail layout" data-he="חלוניות במייל">panes in the mail layout</span></div>
+      <div class="stat"><b class="ltr">24</b><span data-en="live spectrum bars" data-he="עמודות ספקטרום חיות">live spectrum bars</span></div>
+      <div class="stat"><b class="ltr">12</b><span data-en="speaker colours per group" data-he="צבעי דוברים בקבוצה">speaker colours per group</span></div>
+    </div>
+  </div>
+</section>
+<section class="sec" id="money" style="--c:#ffc46b">
+  <div class="wrap">
+    <span class="kicker rev" data-en="FINANCE · NOTHING SPOKEN, NOTHING IN CHAT" data-he="כספים · לא בקול, לא בצ׳אט">FINANCE · NOTHING SPOKEN, NOTHING IN CHAT</span>
+    <h2 class="rev" style="--d:.05s" data-en="The money desk" data-he="שולחן הכספים">The money desk</h2>
+    <p class="lede rev" style="--d:.1s" data-en="She talks about your money out loud. She never says a number out loud. Every figure waits behind one deliberate approval — hold the button and watch what unlocks." data-he="היא מדברת על הכסף שלך בקול. היא לא אומרת מספר בקול. כל סכום ממתין לאישור אחד מכוון — החזק את הכפתור ותראה מה נפתח.">She talks about your money out loud. She never says a number out loud. Every figure waits behind one deliberate approval — hold the button and watch what unlocks.</p>
+
+    <div class="phone rev" style="--d:.15s">
+      <div class="notch"></div>
+      <div class="req">
+        <span class="from" data-en="ALEX · APPROVAL REQUEST" data-he="אלכס · בקשת אישור">ALEX · APPROVAL REQUEST</span>
+        <p data-en="Alex is requesting to display this month's spending summary on the HUD." data-he="אלכס מבקשת להציג את סיכום ההוצאות של החודש על המסך.">Alex is requesting to display this month's spending summary on the HUD.</p>
+        <div class="gate">
+          <button class="hold" id="hold"><span id="holdTxt" data-en="HOLD TO APPROVE" data-he="החזק לאישור">HOLD TO APPROVE</span></button>
+          <button class="deny" id="denyBtn" data-en="Deny" data-he="דחייה">Deny</button>
+        </div>
+      </div>
+      <div style="font-size:.62rem;color:var(--dim);line-height:1.6;margin-top:10px;text-align:center">
+        <span class="badge i" data-en="ILLUSTRATION" data-he="הדגמה">ILLUSTRATION</span>
+        <span data-en="Two routes race in parallel: a fixed cloud address so it works from cellular, and a direct local route for instant approval at home. Checked about every 2s, within a window of up to 5 minutes." data-he="שני מסלולים מתחרים במקביל: כתובת ענן קבועה שעובדת גם מסלולר, ומסלול מקומי ישיר לאישור מיידי בבית. נבדק כל 2 שניות בערך, בחלון של עד 5 דקות.">Two routes race in parallel: a fixed cloud address so it works from cellular, and a direct local route for instant approval at home. Checked about every 2s, within a window of up to 5 minutes.</span>
+      </div>
+    </div>
+
+    <div class="dash rev" id="dash" style="--d:.2s">
+      <div class="wm"><span>SAMPLE · דוגמה</span></div>
+      <div id="lockedMsg" class="locked" data-en="Sealed. Nothing is shown until you approve." data-he="חתום. שום דבר לא מוצג עד שתאשר.">Sealed. Nothing is shown until you approve.</div>
+      <div id="dashBody" class="hide">
+        <div class="mrow"><span class="lbl" data-en="This month, total" data-he="סך החודש">This month, total</span><span class="val num" data-v="4820">— — —</span></div>
+        <div class="mrow"><span class="lbl" data-en="Versus last month" data-he="מול החודש שעבר">Versus last month</span><span class="val num" data-v="-312">— — —</span></div>
+        <div class="mrow"><span class="lbl" data-en="Largest merchant" data-he="הספק הגדול">Largest merchant</span><span class="val num" data-v="960">— — —</span></div>
+        <div class="mrow"><span class="lbl" data-en="Effective tax rate" data-he="שיעור מס אפקטיבי">Effective tax rate</span><span class="val num" data-v="21" data-suf="%">— — —</span></div>
+        <div class="bars" id="mbars"></div>
+        <p style="font-size:.66rem;color:var(--dim);margin-top:12px" data-en="Sample figures, watermarked in the markup — this page holds no real financial data. Re-locks by itself after 45 seconds." data-he="מספרי דוגמה, מסומנים בקוד עצמו — בדף הזה אין שום נתון פיננסי אמיתי. נחתם מחדש מעצמו אחרי 45 שניות.">Sample figures, watermarked in the markup — this page holds no real financial data. Re-locks by itself after 45 seconds.</p>
+      </div>
+    </div>
+
+    <div class="sub" data-en="THE OUTGOING GUARD" data-he="שומר היציאה">THE OUTGOING GUARD</div>
+    <div class="card rev">
+      <p data-en="Spoken and chat replies stay deliberately neutral. Figures live only in the emailed report or the approved card, and a dedicated guard reads every outgoing reply and suppresses anything that pairs money language with an amount." data-he="תשובות בקול ובצ׳אט נשארות ניטרליות בכוונה. סכומים קיימים רק בדוח שנשלח במייל או בכרטיס שאושר, ושומר מיוחד קורא כל תשובה יוצאת וחוסם כל דבר שמצמיד שפה של כסף לסכום.">Spoken and chat replies stay deliberately neutral. Figures live only in the emailed report or the approved card, and a dedicated guard reads every outgoing reply and suppresses anything that pairs money language with an amount.</p>
+    </div>
+
+    <div class="sub" data-en="PAYSLIPS, POLICIES, AND HER OWN COST" data-he="תלושים, פוליסות, והעלות שלה עצמה">PAYSLIPS, POLICIES, AND HER OWN COST</div>
+    <div class="tri rev">
+      <div>
+        <h4 data-en="PAYSLIPS" data-he="תלושי שכר">PAYSLIPS</h4>
+        <p data-en="Opens password-protected PDFs; the password is spoken once and kept in an encrypted vault, never typed into a form. A language model extracts the structure, and a deterministic parser takes over when a layout comes out scrambled." data-he="פותחת קובצי PDF מוגני סיסמה; הסיסמה נאמרת פעם אחת ונשמרת בכספת מוצפנת, בלי להקליד אותה לטופס. מודל שפה מחלץ את המבנה, ומנתח קבוע נכנס כשהפריסה יוצאת משובשת.">Opens password-protected PDFs; the password is spoken once and kept in an encrypted vault, never typed into a form. A language model extracts the structure, and a deterministic parser takes over when a layout comes out scrambled.</p>
+      </div>
+      <div>
+        <h4 data-en="THE MONTHLY STATEMENT" data-he="הדוח החודשי">THE MONTHLY STATEMENT</h4>
+        <p data-en="Month-over-month movement, year-to-date, effective tax rate, pension and study-fund checks, and a stacked bar showing each deduction as a share of gross — phrased as things worth checking, not licensed advice." data-he="שינוי מול החודש הקודם, מתחילת השנה, שיעור מס אפקטיבי, בדיקות פנסיה וקרן השתלמות, ועמודה מוערמת שמראה כל ניכוי כחלק מהברוטו — מנוסח כדברים ששווה לבדוק, לא כייעוץ מורשה.">Month-over-month movement, year-to-date, effective tax rate, pension and study-fund checks, and a stacked bar showing each deduction as a share of gross — phrased as things worth checking, not licensed advice.</p>
+      </div>
+      <div>
+        <h4 data-en="POLICIES + HER RUNNING COST" data-he="פוליסות + העלות שלה">POLICIES + HER RUNNING COST</h4>
+        <p data-en="Scans mail for the major insurers, accepts one by voice, groups by type, totals the monthly premium and warns before a renewal. And she shows her own bill: engine health, tokens per model, real spend separated from list-price estimate, quotas counting down live." data-he="סורקת מייל אחרי חברות הביטוח הגדולות, מקבלת פוליסה גם בקול, מקבצת לפי סוג, מסכמת את הפרמיה החודשית ומתריעה לפני חידוש. וגם מציגה את החשבון שלה עצמה: בריאות מנועים, טוקנים לכל מודל, הוצאה אמיתית בנפרד מהערכת מחירון, ומכסות בספירה לאחור.">Scans mail for the major insurers, accepts one by voice, groups by type, totals the monthly premium and warns before a renewal. And she shows her own bill: engine health, tokens per model, real spend separated from list-price estimate, quotas counting down live.</p>
+      </div>
+    </div>
+
+    <div class="stats rev">
+      <div class="stat"><b class="ltr">9</b><span data-en="finance skills" data-he="מיומנויות פיננסיות">finance skills</span></div>
+      <div class="stat"><b class="ltr">0</b><span data-en="figures spoken or in chat" data-he="סכומים בקול או בצ׳אט">figures spoken or in chat</span></div>
+      <div class="stat"><b class="ltr">2</b><span data-en="approval routes in parallel" data-he="מסלולי אישור במקביל">approval routes in parallel</span></div>
+      <div class="stat"><b class="ltr">6h</b><span data-en="mail sweep while a payslip is due" data-he="סריקת מייל כשתלוש אמור להגיע">mail sweep while a payslip is due</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="team" style="--c:#c9a0ff">
+  <div class="wrap">
+    <span class="kicker rev" data-en="AUTONOMY · 7 AGENTS" data-he="אוטונומיה · 7 סוכנים">AUTONOMY · 7 AGENTS</span>
+    <h2 class="rev" style="--d:.05s" data-en="Her team, and its leash" data-he="הצוות שלה, והרצועה">Her team, and its leash</h2>
+    <p class="lede rev" style="--d:.1s" data-en="Seven agents with their own personas and their own tools. She acknowledges in milliseconds and keeps talking to you while they work. Tap one." data-he="שבעה סוכנים עם אופי משלהם וכלים משלהם. היא מאשרת קליטה בשברירי שנייה וממשיכה לדבר איתך בזמן שהם עובדים. גע באחד.">Seven agents with their own personas and their own tools. She acknowledges in milliseconds and keeps talking to you while they work. Tap one.</p>
+
+    <div class="agents rev" id="agents" style="--d:.15s"></div>
+    <div class="agd hide" id="agd">
+      <dl class="kv">
+        <dt data-en="Triggered by" data-he="מופעל על ידי">Triggered by</dt><dd id="agdT"></dd>
+        <dt data-en="May do alone" data-he="מותר לו לבד">May do alone</dt><dd id="agdA"></dd>
+        <dt data-en="Must ask about" data-he="חייב לשאול על">Must ask about</dt><dd id="agdQ"></dd>
+      </dl>
+    </div>
+
+    <div class="sub" data-en="FIVE PROVIDERS, ONE UNBROKEN BEAM" data-he="חמישה ספקים, קרן אחת שלא נשברת">FIVE PROVIDERS, ONE UNBROKEN BEAM</div>
+    <div class="ribbon rev" id="ribbon"></div>
+    <div class="ticker rev" id="ticker"></div>
+    <div class="row-btns rev">
+      <button class="btn" id="stallBtn" data-ripple data-en="Simulate a stall" data-he="לדמות תקיעה">Simulate a stall</button>
+      <span class="badge i" data-en="ILLUSTRATION" data-he="הדגמה">ILLUSTRATION</span>
+    </div>
+
+    <div class="stats rev">
+      <div class="stat"><b class="ltr">5</b><span data-en="model providers in the chain" data-he="ספקי מודלים בשרשרת">model providers in the chain</span></div>
+      <div class="stat"><b class="ltr">60s</b><span data-en="stall cap per call" data-he="תקרת תקיעה לכל קריאה">stall cap per call</span></div>
+      <div class="stat"><b class="ltr">16</b><span data-en="tool rounds an agent runs alone" data-he="סבבי כלים שסוכן מריץ לבד">tool rounds an agent runs alone</span></div>
+      <div class="stat"><b class="ltr">~7s</b><span data-en="request to finished agent result" data-he="מבקשה לתוצאה מוגמרת">request to finished agent result</span></div>
+    </div>
+
+    <div class="sub" data-en="SHE BUILDS HER OWN ABILITIES" data-he="היא בונה לעצמה יכולות">SHE BUILDS HER OWN ABILITIES</div>
+    <div class="card rev">
+      <p data-en="One agent writes a new skill. The code is compile-checked before it is allowed to land, a reviewer agent audits it automatically, and the capability can go live without rebuilding the app." data-he="סוכן אחד כותב מיומנות חדשה. הקוד נבדק בקומפילציה לפני שהוא מורשה להיכנס, סוכן סוקר מבקר אותו אוטומטית, והיכולת יכולה לעלות לאוויר בלי לבנות מחדש את האפליקציה.">One agent writes a new skill. The code is compile-checked before it is allowed to land, a reviewer agent audits it automatically, and the capability can go live without rebuilding the app.</p>
+      <p style="margin-top:12px" data-en="The proactive loop checks mail and calendar every 90 seconds, raises only what actually matters, gives a forward-looking heads-up on new events, and won't alert you twice about the same thing — even after a restart." data-he="הלולאה הפרואקטיבית בודקת מייל ויומן כל 90 שניות, מעלה רק מה שבאמת חשוב, נותנת התראה מקדימה על אירועים חדשים, ולא תתריע פעמיים על אותו דבר — גם אחרי הפעלה מחדש.">The proactive loop checks mail and calendar every 90 seconds, raises only what actually matters, gives a forward-looking heads-up on new events, and won't alert you twice about the same thing — even after a restart.</p>
+    </div>
+
+    <div class="sub" data-en="THE LEASH" data-he="הרצועה">THE LEASH</div>
+    <div class="tri rev">
+      <div>
+        <h4 data-en="REVERSIBLE" data-he="הפיך">REVERSIBLE</h4>
+        <p data-en="Drafting, labelling, logging. She just does it, then tells you." data-he="ניסוח טיוטות, תיוג, רישום. היא פשוט עושה, ואחר כך מספרת לך.">Drafting, labelling, logging. She just does it, then tells you.</p>
+      </div>
+      <div>
+        <h4 data-en="OUTBOUND" data-he="יוצא החוצה">OUTBOUND</h4>
+        <p data-en="Send, spend, delete, post. Waits behind a phone approval with the full draft attached plus a one-line &ldquo;here's what I checked&rdquo;, runs exactly once when you approve, and discards itself after an hour." data-he="שליחה, הוצאה, מחיקה, פרסום. ממתין לאישור מהטלפון עם הטיוטה המלאה מצורפת ושורה אחת של ״זה מה שבדקתי״, מתבצע בדיוק פעם אחת כשאתה מאשר, ומתבטל מעצמו אחרי שעה.">Send, spend, delete, post. Waits behind a phone approval with the full draft attached plus a one-line &ldquo;here's what I checked&rdquo;, runs exactly once when you approve, and discards itself after an hour.</p>
+      </div>
+      <div>
+        <h4 data-en="NEVER DISCLOSED" data-he="לא נחשף">NEVER DISCLOSED</h4>
+        <p data-en="A reply she writes never reveals your private details, even when asked directly. It defers — and what she found is shown to you alone, marked for your eyes only." data-he="תשובה שהיא כותבת לא חושפת את הפרטים הפרטיים שלך, גם כששואלים ישירות. היא מתחמקת בנימוס — ומה שהיא מצאה מוצג רק לך, מסומן לעיניך בלבד.">A reply she writes never reveals your private details, even when asked directly. It defers — and what she found is shown to you alone, marked for your eyes only.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="registry" style="--c:#9db4ff">
+  <div class="wrap">
+    <span class="kicker rev" data-en="REGISTRY · 56 ENTRIES" data-he="מפתח יכולות · 56 רשומות">REGISTRY · 56 ENTRIES</span>
+    <h2 class="rev" style="--d:.05s" data-en="Everything she does, enumerated" data-he="כל מה שהיא עושה, אחד-אחד">Everything she does, enumerated</h2>
+    <p class="lede rev" style="--d:.1s" data-en="Fifty-six capabilities, eight in each of seven categories. Search it, filter it, or flip it into a table. Tap any card to open it." data-he="חמישים ושש יכולות, שמונה בכל אחת משבע קטגוריות. חפש, סנן, או הפוך לטבלה. גע בכל כרטיס כדי לפתוח.">Fifty-six capabilities, eight in each of seven categories. Search it, filter it, or flip it into a table. Tap any card to open it.</p>
+
+    <div class="searchbar rev" style="--d:.15s">
+      <input id="q" type="search" data-ph-en="Search 56 capabilities…" data-ph-he="חיפוש ב-56 יכולות…" placeholder="Search 56 capabilities…" aria-label="search">
+      <button class="btn" id="matrixBtn" data-ripple data-en="Table" data-he="טבלה">Table</button>
+    </div>
+    <div class="chips rev" id="chips"></div>
+    <div class="count rev" id="count"></div>
+    <div class="grid56" id="grid56"></div>
+    <div class="residue rev" id="residue" aria-hidden="true"></div>
+    <p style="font-size:.66rem;color:var(--dim);margin-top:10px" data-en="Filtered-out capabilities collapse into dots instead of vanishing, so the size of the whole set stays visible." data-he="יכולות שסוננו מתכנסות לנקודות במקום להיעלם, כדי שגודל הסט המלא יישאר גלוי.">Filtered-out capabilities collapse into dots instead of vanishing, so the size of the whole set stays visible.</p>
+
+    <table class="matrix hide" id="matrix"></table>
+
+    <div class="sub" data-en="STATS LEDGER — EVERY NUMBER ON THIS PAGE" data-he="ספר המספרים — כל מספר בדף הזה">STATS LEDGER — EVERY NUMBER ON THIS PAGE</div>
+    <p style="font-size:.78rem;color:var(--muted);line-height:1.7" data-en="One table so the whole page is auditable in one place. Two badges only." data-he="טבלה אחת כדי שכל הדף יהיה ניתן לבדיקה במקום אחד. שני תגים בלבד.">One table so the whole page is auditable in one place. Two badges only.</p>
+    <table class="ledger" id="ledger"></table>
+  </div>
+</section>
 
 <section class="outro">
-  <span class="tag">NORTH STAR</span>
-  <h2 data-i18n="out_h2">Alex in every home</h2>
-  <p data-i18n="out_p">Voice, mind, money, home and heart — one being that does it all together, not apart. And this is just the beginning.</p>
-  <a class="cta" href="#journey" data-i18n="cta">Wake her again</a>
-  <footer data-i18n="foot">Alex. — living-light HUD · one HTML file, one scroll.</footer>
+  <span class="kicker" data-en="NORTH STAR" data-he="כוכב הצפון">NORTH STAR</span>
+  <h2 data-en="Alex in every home" data-he="אלכס בכל בית">Alex in every home</h2>
+  <p data-en="The wedge isn't any single skill — it's the integration. Voice, mind, identity, money, home, interfaces and a team of agents, all in one being that does it together instead of apart." data-he="הטריז הוא לא מיומנות אחת — הוא האינטגרציה. קול, מוח, זהות, כסף, בית, ממשקים וצוות סוכנים, הכל בישות אחת שעושה את זה ביחד ולא בנפרד.">The wedge isn't any single skill — it's the integration. Voice, mind, identity, money, home, interfaces and a team of agents, all in one being that does it together instead of apart.</p>
+  <a class="cta" href="#journey" data-ripple data-en="Wake her again" data-he="להתעורר שוב">Wake her again</a>
+  <div class="legend">
+    <div><span class="badge d">DERIVED</span><span data-en="Computed on this page from the capability list itself." data-he="מחושב בדף הזה מרשימת היכולות עצמה.">Computed on this page from the capability list itself.</span></div>
+    <div style="margin-top:8px"><span class="badge o">OWNER-VERIFIED</span><span data-en="Stated by the system's author. No benchmark claim, no comparison to any other assistant." data-he="נאמר על ידי מי שבנה את המערכת. בלי טענת בנצ׳מרק, בלי השוואה לעוזר אחר.">Stated by the system's author. No benchmark claim, no comparison to any other assistant.</span></div>
+    <div style="margin-top:8px"><span class="badge i">ILLUSTRATION</span><span data-en="An interactive demonstration on this page — not a live connection to a running system. No real personal, financial or home data appears anywhere here." data-he="הדגמה אינטראקטיבית בדף הזה — לא חיבור חי למערכת שרצה. אין כאן שום נתון אישי, פיננסי או ביתי אמיתי.">An interactive demonstration on this page — not a live connection to a running system. No real personal, financial or home data appears anywhere here.</span></div>
+  </div>
+  <footer data-en="Alex. — living-light HUD · one HTML file, no libraries, no network." data-he="אלכס. — living-light HUD · קובץ HTML אחד, בלי ספריות, בלי רשת.">Alex. — living-light HUD · one HTML file, no libraries, no network.</footer>
 </section>
 
 <script>
-  /* ---------- i18n: she's bilingual, so is her site ---------- */
-  const I18N = {
-    logo:  { en: 'Alex<span>.</span>', he: 'אלכס<span>.</span>' },
-    op_h1: { en: 'Alex.', he: 'אלכס.' },
-    op_p:  { en: 'Not an app. A being of light that runs your life.',
-             he: 'לא אפליקציה. ישות של אור שמנהלת לך את החיים.' },
-    hint:  { en: 'Scroll — watch her shapeshift ▾', he: 'גלול — והיא תשתנה מול העיניים שלך ▾' },
-    v_h2:  { en: 'She hears you', he: 'היא שומעת אותך' },
-    v_p:   { en: 'Say “Alex” — and the particles become a soundwave. Hebrew, English, even mixed in one sentence. She starts talking within a second.',
-             he: 'אומרים ״אלכס״ — והחלקיקים נהיים גל קול. עברית, אנגלית, אפילו באותו משפט. עונה תוך שנייה.' },
-    m_h2:  { en: 'A networked mind', he: 'מוח של רשת' },
-    m_p:   { en: 'A multi-engine router with silent failover, and a memory that learns you a little more every day — and never forgets.',
-             he: 'נתב רב-מנועי עם failover שקט, וזיכרון שלומד אותך כל יום מחדש — ולא שוכח כלום.' },
-    f_h2:  { en: 'Money, handled', he: 'הכסף תחת שליטה' },
-    f_p:   { en: 'Live spending reports, payslip analysis, monthly insights. Anything sensitive appears only after approval on your phone.',
-             he: 'דוחות חיים, ניתוח תלוש, תובנות חודשיות. נתון רגיש? רק אחרי אישור בטלפון שלך.' },
-    h_h2:  { en: 'Your home, by voice', he: 'הבית שלך, בקול' },
-    h_p:   { en: 'Lights, AC, blinds, cameras — one smart layer above your entire home, built around her.',
-             he: 'אורות, מזגן, תריסים, מצלמות — הכל נבנה סביבה. שכבה חכמה אחת מעל כל הבית.' },
-    s_h2:  { en: 'Not a bot. A friend.', he: 'לא בוט. חברה.' },
-    s_p:   { en: 'Witty, wry, warm when it matters. She reads your mood and answers accordingly — no bullshit.',
-             he: 'שנונה, צינית בחיוך, חמה כשצריך. קוראת אותך ועונה בהתאם — בלי בולשיט.' },
-    out_h2:{ en: 'Alex in every home', he: 'אלכס בכל בית' },
-    out_p: { en: 'Voice, mind, money, home and heart — one being that does it all together, not apart. And this is just the beginning.',
-             he: 'קול, מוח, כסף, בית ולב — ישות אחת שעושה הכל ביחד, לא בנפרד. וזו רק ההתחלה.' },
-    cta:   { en: 'Wake her again', he: 'להתעורר שוב' },
-    foot:  { en: 'Alex. — living-light HUD · one HTML file, one scroll.',
-             he: 'אלכס. — living-light HUD · קובץ HTML אחד, גלילה אחת.' },
-  };
-  const langBtn = document.getElementById('lang');
-  let LANG = 'en';
-  function setLang(l) {
+const CAPS=[
+{c:'voice',te:'Speaks before she finishes thinking',th:'מדברת עוד לפני שסיימה לחשוב',de:'Words stream out of the model and the opening clause goes to voice the moment it lands, so you hear her first words while the rest of the answer is still being written.',dh:'המילים זורמות מהמודל, והפסוקית הראשונה עולה לקול ברגע שהיא מוכנה — כך שאתה שומע אותה מדברת בזמן שהמשך התשובה עוד נכתב.'},
+{c:'voice',te:'Call Mode: no wake word, no turn limit',th:'מצב שיחה: בלי מילת הפעלה, בלי הגבלת תורים',de:'One tap opens a continuous hands-free conversation with the mic held open for real back-and-forth. Silence keeps the line alive instead of hanging up; you end it with a tap or just by saying goodbye.',dh:'לחיצה אחת פותחת שיחה רצופה בלי ידיים, כשהמיקרופון נשאר פתוח להלוך-חזור אמיתי. שקט לא מנתק אלא ממתין, ומסיימים בלחיצה או פשוט באמירת "ביי".'},
+{c:'voice',te:'Cut her off mid-sentence',th:'אפשר לקטוע אותה באמצע משפט',de:'Echo cancellation on the listening path keeps the mic live while she talks, so your very first word stops her instantly. No wake word, no waiting for her to reach the end.',dh:'ביטול הד בערוץ ההאזנה משאיר את המיקרופון פתוח גם כשהיא מדברת, ולכן המילה הראשונה שלך עוצרת אותה מיד — בלי מילת הפעלה ובלי לחכות שתסיים.'},
+{c:'voice',te:'She never hears herself',th:'היא לא מתבלבלת מהקול של עצמה',de:'An echo guard and a noise filter screen every transcript before she reacts, so her own speech, room noise, and half-words can\'t trigger a turn. Only real human speech moves the conversation forward.',dh:'מסנן הד ומסנן רעש בודקים כל תמלול לפני שהיא מגיבה, כך שהקול שלה עצמה, רעשי חדר וחצאי מילים לא פותחים תור. רק דיבור אנושי אמיתי מקדם את השיחה.'},
+{c:'voice',te:'Hebrew and English in the same sentence',th:'עברית ואנגלית באותו משפט',de:'Two recognition passes run in parallel and a bilingual resolver takes over when one utterance mixes both scripts, so a sentence that switches languages mid-way is understood whole. Clean Hebrew short-circuits to the fast path with no added delay.',dh:'שני מסלולי זיהוי רצים במקביל, וכשמשפט אחד מערבב שתי שפות נכנס פותר דו-לשוני — כך שמשפט שמתחלף באמצע מובן במלואו. עברית ברורה ממשיכה במסלול המהיר בלי שום עיכוב נוסף.'},
+{c:'voice',te:'She answers in the language you used',th:'היא עונה בשפה שבה דיברת',de:'Every request carries a hard language lock: Hebrew in, Hebrew out; English in, English out. It\'s decided per request rather than suggested to the model, and a Hebrew sentence containing one English word stays Hebrew.',dh:'לכל בקשה מוצמדת נעילת שפה חד-משמעית: עברית נכנסת, עברית יוצאת; אנגלית נכנסת, אנגלית יוצאת. ההכרעה נעשית לכל בקשה בנפרד ולא כבקשה מנוסחת למודל, ומשפט עברי עם מילה אחת באנגלית נשאר עברי.'},
+{c:'voice',te:'Three voices deep, so she\'s never silent',th:'שלוש שכבות קול — היא לעולם לא נשארת בשקט',de:'A premium neural voice leads, a free cloud voice backs it up, and a fully offline on-device voice is the floor. A throttled provider is set aside for a short cooldown instead of retried, so network or quota trouble costs a little quality and never the answer.',dh:'קול נוירונלי פרימיום מוביל, קול ענן חינמי מגבה אותו, ומתחת לשניהם קול מקומי שעובד גם בלי רשת. ספק שנחסם מוקפא לרגע קצר במקום להיתקע בניסיונות חוזרים, ולכן תקלת רשת פוגעת לכל היותר באיכות — לא בתשובה.'},
+{c:'voice',te:'Gapless delivery',th:'דיבור רצוף, בלי חורים',de:'While one sentence plays, the next is already being synthesized, with exactly one voice request in flight at a time. The result is continuous speech with no stitching pauses between sentences.',dh:'בזמן שמשפט אחד מושמע, הבא אחריו כבר עובר סינתזה — עם בקשת קול אחת בכל רגע נתון. התוצאה היא דיבור רצוף, בלי שתיקות תפר בין משפטים.'},
+{c:'mind',te:'Meaning, not keywords',th:'משמעות, לא מילות מפתח',de:'One fast classification maps any phrasing onto 18 intents — weather, expenses, messages, music, reports, home control. Say it a new way, spell it wrong, or let the mic garble it, and she still lands on the right action.',dh:'סיווג אחד מהיר ממפה כל ניסוח ל-18 כוונות: מזג אוויר, הוצאות, הודעות, מוזיקה, דוחות, בקרת בית. גם אם ניסחת אחרת, כתבת בשגיאה או שהמיקרופון עיוות — היא עדיין תגיע לפעולה הנכונה.'},
+{c:'mind',te:'Smart recognition, exact execution',th:'הבנה חכמה, ביצוע מדויק',de:'The AI decides what you want; deterministic code carries it out. You get the flexibility of natural speech without unpredictable behavior — and when confidence is low she takes a slower, more careful path instead of guessing.',dh:'ה-AI מזהה מה ביקשת, וקוד קבוע מבצע. כל הגמישות של דיבור טבעי, בלי הפתעות — וכשהביטחון נמוך היא לא מנחשת אלא עוברת למסלול זהיר יותר.'},
+{c:'mind',te:'Two requests in one breath',th:'שתי בקשות בנשימה אחת',de:'"Put on some music and send me the expense report" gets both done. She detects when a sentence holds more than one action and completes each one, instead of handling the first and quietly dropping the rest.',dh:'"שימי מוזיקה ותשלחי לי את דוח ההוצאות" — שתיהן יקרו. היא מזהה שבמשפט יש יותר מפעולה אחת ומשלימה את כולן, לא רק את הראשונה.'},
+{c:'mind',te:'Many engines, one voice',th:'הרבה מוחות, קול אחד',de:'Eighteen AI engines were benchmarked head to head for speed and for reliably carrying out actions. The winner answers; the rest wait behind it in an automatic failover chain, so a rate limit or an outage changes the engine, never the conversation.',dh:'18 מנועי AI נבחנו זה מול זה על מהירות ועל ביצוע אמיתי של פעולות. המוביל עונה, והשאר ממתינים אחריו בשרשרת גיבוי אוטומטית — כך שתקלה או חסימת קצב מחליפות מנוע, לא שיחה.'},
+{c:'mind',te:'Escalates the hard questions',th:'שולפת את המוח הכבד כשצריך',de:'Small talk and commands stay on the fastest engine. A real question — why, how, which one should I pick — is routed automatically to the strongest reasoning model. Speed by default, depth when it matters.',dh:'שיחה קלה ופקודות רצות על המנוע המהיר. שאלה אמיתית — למה, איך, מה כדאי — עולה אוטומטית למודל החושב ביותר. מהירות כברירת מחדל, עומק כשזה חשוב.'},
+{c:'mind',te:'Cost-aware by design',th:'מודעת לעלות מהיסוד',de:'She runs on free capacity by default and reaches for paid capacity only when a request is too large for it or the free lane runs out — same model, no loss of capability, no silent overspending.',dh:'כברירת מחדל היא רצה על קיבולת חינמית, ועוברת לקיבולת בתשלום רק כשהבקשה גדולה מדי או שהחינמית נגמרה — אותו מודל, בלי לאבד יכולת ובלי לשרוף תקציב בשקט.'},
+{c:'mind',te:'No credit for work she didn\'t do',th:'לא מספרת שעשתה — עושה',de:'Every claim is checked against what actually ran. If she says a mail went out and no send succeeded, she is pushed to actually send it — or to tell you plainly that it didn\'t happen.',dh:'כל הצהרה נבדקת מול מה שבאמת רץ. אם היא אומרת שהמייל נשלח והשליחה לא הצליחה — היא תשלח אותו באמת, או תגיד לך ישר שזה לא קרה.'},
+{c:'mind',te:'Answers with a point of view',th:'תשובה עם עמדה',de:'Her answers follow one shape: a real fact or number, a verdict that takes a side, then one concrete next step — in a sentence or two. When she doesn\'t know, she says so in one line instead of inventing.',dh:'כל תשובה בנויה אותו דבר: נתון אמיתי, הכרעה שלוקחת צד, וצעד אחד קונקרטי — במשפט או שניים. וכשהיא לא יודעת, היא אומרת את זה בשורה אחת במקום להמציא.'},
+{c:'identity',te:'Recognizes voices, not just words',th:'מזהה קול, לא רק מילים',de:'A 512-dimension voiceprint identifies who is speaking from the timbre of the voice itself, so it holds whether you speak Hebrew, English, or switch mid-sentence. Matching runs on-device on the CPU — no GPU, no cloud, no biometric upload.',dh:'טביעת קול ב-512 מידות מזהה מי מדבר לפי צליל הקול עצמו, ולכן היא עובדת בעברית, באנגלית, וגם כשעוברים בין השתיים באמצע משפט. ההשוואה מתבצעת מקומית על המעבד — בלי GPU, בלי ענן, בלי העלאה של נתונים ביומטריים.'},
+{c:'identity',te:'A separate memory for every person',th:'זיכרון נפרד לכל אדם',de:'Each recognized person gets their own namespace of facts, notes and conversation history. What Alex learns about one member of the household never surfaces in someone else\'s answer.',dh:'לכל אדם מזוהה יש מאגר עובדות, הערות והיסטוריית שיחה משלו. מה שאלכס לומדת על אחד לא מגיע לתשובה שהיא נותנת לאחר.'},
+{c:'identity',te:'Speaks to you in your own grammar',th:'מדברת אליך בלשון שלך',de:'Hebrew conjugates by gender. Set the profile once and every sentence — from the morning brief to a one-word answer — is addressed in the right form, without you correcting her.',dh:'בעברית כל פנייה מוטה לפי מין. מגדירים את הפרופיל פעם אחת, ומאז כל משפט — מתקציר הבוקר ועד תשובה של מילה אחת — מנוסח בלשון הנכונה, בלי שתצטרכו לתקן אותה.'},
+{c:'identity',te:'One assistant, any home',th:'עוזרת אחת, כל בית',de:'Identity is two layers: a fixed creator she never forgets, and an owner she serves. Set a new owner — name, language, grammatical gender — and her persona, her memory namespace and her daily brief all move with them.',dh:'הזהות של אלכס בנויה משתי שכבות: יוצר קבוע שהיא לא שוכחת, ובעלים שהיא משרתת. מגדירים בעלים חדש — שם, שפה, לשון — והאישיות, הזיכרון והתקציר היומי עוברים איתו.'},
+{c:'identity',te:'Studio-grade voice enrollment',th:'הרשמת קול באיכות אולפן',de:'A guided recording flow: read one of 14 rotating phrases, watch a live level meter as you speak, play the take back, and see a per-person accuracy verdict showing how far your voiceprint sits from everyone else\'s.',dh:'תהליך הקלטה מונחה: קוראים אחד מ-14 משפטים מתחלפים, רואים מד עוצמה חי בזמן הדיבור, מאזינים להקלטה, ומקבלים ציון דיוק לכל אדם — כולל עד כמה טביעת הקול שלו נפרדת משל האחרים.'},
+{c:'identity',te:'Holds steady through noise',th:'לא מתבלבלת מרעש',de:'Instead of re-deciding on every sentence, Alex locks onto the person currently talking and switches only when someone else clearly takes the turn — a mumbled word or a loud room doesn\'t change who she thinks she\'s with.',dh:'במקום להחליט מחדש בכל משפט, אלכס נצמדת לאדם שמדבר כרגע ומחליפה רק כשמישהו אחר באמת לוקח את התור — מילה מגומגמת או חדר רועש לא משנים לה את הזהות.'},
+{c:'identity',te:'Discreet with voices she doesn\'t know',th:'דיסקרטית עם קול שהיא לא מכירה',de:'When a clear utterance matches nobody enrolled, Alex stays helpful but stops volunteering the owner\'s private details, and sensitive actions still wait for the owner\'s explicit approval on their phone.',dh:'כשמשפט ברור לא מתאים לאף אחד מהרשומים, אלכס ממשיכה לעזור אבל מפסיקה למסור פרטים פרטיים של הבעלים — ופעולות רגישות ממתינות לאישור מפורש של הבעלים בטלפון.'},
+{c:'identity',te:'Your profile, editable by hand or by voice',th:'הפרופיל שלך — לעריכה ביד או בקול',de:'Everything Alex remembers about you sits in one readable list: tap a fact to change it, add a field, delete what\'s wrong. Or just tell her out loud to remember something new or forget something old.',dh:'כל מה שאלכס זוכרת עליך מרוכז ברשימה אחת וברורה: נגיעה בעובדה כדי לשנות אותה, הוספת שדה, מחיקה של מה שלא נכון. ואפשר גם פשוט לומר לה בקול לזכור משהו חדש או לשכוח משהו ישן.'},
+{c:'finance',te:'The dashboard opens only after you approve',th:'הדשבורד נפתח רק אחרי אישור',de:'Ask for a financial report and Alex pulls live card and bank data, then parks it. The HUD dashboard — donut, trend line, top merchants, counting-up totals — flies in only once you approve the reveal from your phone or unlock the desktop.',dh:'מבקשים דוח פיננסי, ואלכס אוספת נתוני אשראי ובנק — ואז עוצרת. הדשבורד עולה ל-HUD (דונאט, גרף מגמה, בתי עסק מובילים, מספרים שנספרים כלפי מעלה) רק אחרי שאישרתם מהטלפון או פתחתם את המחשב.'},
+{c:'finance',te:'Approve from anywhere, on any network',th:'מאשרים מכל מקום, מכל רשת',de:'Approve and deny buttons sit inside the phone notification itself. The decision travels through a fixed cloud address, so it works from another network or from cellular — while a direct local route races alongside it for instant approval at home.',dh:'כפתורי אישור ודחייה יושבים בתוך ההתראה בטלפון. ההחלטה עוברת דרך כתובת ענן קבועה, ולכן זה עובד גם מרשת אחרת וגם מסלולרי — ובמקביל רץ מסלול מקומי ישיר לאישור מיידי בבית.'},
+{c:'finance',te:'Numbers never slip into the conversation',th:'מספרים לא נשמטים לשיחה',de:'Spoken and chat replies stay deliberately neutral; figures live only in the emailed report or the approved card. A dedicated guard reads every outgoing reply and suppresses anything that pairs money language with an amount.',dh:'התשובה בקול ובצ\'אט תמיד נייטרלית; הסכומים קיימים רק בדוח שנשלח למייל או בכרטיס המאושר. שומר סף קורא כל תשובה יוצאת וחוסם כל טקסט שמצרף שפה של כסף לסכום.'},
+{c:'finance',te:'Reads your payslip, even when it is locked',th:'קוראת את התלוש, גם כשהוא נעול',de:'Alex opens password-protected payslip PDFs, extracts the structure with a language model, and drops to a deterministic parser when a layout comes out scrambled. The password is spoken once and kept in an encrypted vault — never typed into a form.',dh:'אלכס פותחת תלושי PDF מוגני סיסמה, מחלצת את המבנה במודל שפה, ונופלת לפרסר דטרמיניסטי כשהפריסה יוצאת מבולגנת. את הסיסמה אומרים לה פעם אחת בקול והיא נשמרת בכספת מוצפנת — בלי להקליד בשום טופס.'},
+{c:'finance',te:'A monthly payroll statement that reconciles to the cent',th:'דוח שכר חודשי שנסגר לאגורה האחרונה',de:'Month-over-month and year-to-date movement, effective tax rate, pension and study-fund checks, and a stacked gross-composition bar showing each deduction as a share of gross. Insights are phrased as things worth checking, not licensed advice.',dh:'שינוי חודש מול חודש ומתחילת השנה, שיעור מס אפקטיבי, בדיקת פנסיה וקרן השתלמות, ופס "הרכב הברוטו" מוערם שמראה כל ניכוי כאחוז מהברוטו. התובנות מנוסחות כ"שווה לבדוק" — לא כייעוץ מורשה.'},
+{c:'finance',te:'Fetches next month\'s payslip on her own',th:'מביאה את התלוש הבא לבד',de:'A background loop checks your mail every six hours through the opening days of the month, ingests the new payslip exactly once, mails the report and pings you — then goes quiet. Scans run as protected background tasks, so your next sentence never kills one mid-flight.',dh:'לופ רקע סורק את המייל כל שש שעות בימים הראשונים של החודש, קולט את התלוש החדש פעם אחת בדיוק, שולח את הדוח ודוחף התראה — ואז משתיק את עצמו. הסריקות רצות כמשימות רקע מוגנות, כך שהמשפט הבא שלכם לא הורג אותן באמצע.'},
+{c:'finance',te:'Every policy in one portfolio',th:'כל הפוליסות בתיק אחד',de:'Alex scans your mail for the major insurers and extracts policies with a language model, and you can add one by voice — "I have home insurance, add it." She groups by type, totals the monthly premium and warns you before a renewal date.',dh:'אלכס סורקת את המייל לפי חברות הביטוח הגדולות ומחלצת פוליסות במודל שפה, ואפשר להוסיף פוליסה בקול — "יש לי ביטוח דירה, תוסיפי". היא מסדרת לפי סוג, מסכמת את הפרמיה החודשית ומתריעה לפני מועד חידוש.'},
+{c:'finance',te:'Tracks her own running cost, honestly',th:'עוקבת גם אחרי העלות של עצמה',de:'A usage card shows engine health, tokens per model, and separates what Alex actually spent from what is only a list-price estimate. Renewal rows count down live to each quota reset.',dh:'כרטיס ניצול מציג את מצב המנוע, טוקנים לפי מודל, ומפריד בין הוצאה אמיתית לבין הערכה לפי מחירון בלבד. שורות התחדשות מציגות ספירה לאחור חיה עד איפוס כל מכסה.'},
+{c:'home',te:'The screen that never goes dark',th:'המסך שלא נכבה',de:'Alex takes over the whole tablet: a big live clock and Hebrew date, weather, today\'s agenda and inbox at a glance, a music player along the bottom, and the orb in the middle. Tap the orb to start talking, or ask her to open the hub from across the room.',dh:'אלכס פרושה על כל מסך הטאבלט: שעון גדול ותאריך עברי, מזג אוויר, היומן והמיילים במבט אחד, נגן מוזיקה למטה, והאורב במרכז. נגיעה באורב ומתחילים לדבר — או פשוט מבקשים ממנה מהצד השני של החדר לפתוח את מסך הבית.'},
+{c:'home',te:'Rooms, not a list of gadgets',th:'חדרים, לא רשימת מכשירים',de:'Every device gets assigned to a room, and the hub organizes itself around that. Pick a room and only its controls stay on screen — in a one-room setup the selector quietly disappears.',dh:'כל מכשיר מקבל חדר, והלוח מסדר את עצמו לפי זה. בוחרים חדר ורואים רק את מה שיש בו — ובבית עם חדר אחד הבורר פשוט לא מופיע.'},
+{c:'home',te:'A full AC remote, not a toggle',th:'שלט מזגן מלא, לא מתג',de:'The air conditioner gets a real remote: power, temperature up and down, cooling / heating / dry / fan modes, and four fan speeds. Say "AC, cooling, 22, high fan" and Alex sends exactly that code.',dh:'המזגן מקבל שלט אמיתי: הדלקה, טמפרטורה למעלה ולמטה, קירור/חימום/ייבוש/מאוורר וארבע מהירויות מפוח. אומרים "מזגן קירור 22 מאוורר גבוה" — ואלכס שולחת בדיוק את הפקודה הזאת.'},
+{c:'home',te:'Any AC, in any home',th:'כל מזגן, בכל בית',de:'Type a brand and Alex searches 356 AC models from 129 makers, imports the code set, fires a test command and asks whether the unit responded. No? She tries the next candidate. Nothing matches? She learns your own remote, button by button.',dh:'מקלידים יצרן, ואלכס מחפשת בין 356 דגמי מזגנים של 129 מותגים, מייבאת את מערך הקודים, שולחת פקודת בדיקה ושואלת אם המזגן הגיב. לא? היא עוברת לדגם הבא. לא נמצא בכלל? היא לומדת את השלט שלך, כפתור אחרי כפתור.'},
+{c:'home',te:'Shutters and curtains, over radio',th:'תריסים ווילונות, בגלי רדיו',de:'Shutters speak 433 MHz radio, not infrared. Alex sweeps for the frequency, learns up / stop / down, and puts real ▲ ■ ▼ buttons on the tile — or just takes "open the shutter" out loud.',dh:'תריסים מדברים 433 מגה-הרץ, לא אינפרא-אדום. אלכס סורקת את התדר, לומדת למעלה/עצור/למטה, ומציגה ▲ ■ ▼ אמיתיים על האריח — או פשוט מקבלת "תעלי את התריס" בדיבור.'},
+{c:'home',te:'3000+ integrations through Home Assistant',th:'מעל 3000 אינטגרציות דרך Home Assistant',de:'Connect Alex to a Home Assistant instance and the hub fills with everything it speaks — Zigbee, Z-Wave, Matter, Tuya, Shelly, Hue and thousands more — as lights, switches, sensors, covers, locks, climate, fans, vacuums and live camera tiles. Video is proxied through Alex\'s own server, so your home credentials never leave it.',dh:'מחברים את אלכס ל-Home Assistant והלוח מתמלא בכל מה שיש בבית — Zigbee, Z-Wave, Matter, Tuya, Shelly, Hue ואלפים נוספים — אורות, מתגים, חיישנים, תריסים, מנעולים, מיזוג, מאווררים, שואבים ואריחי מצלמה חיים. הווידאו עובר דרך השרת של אלכס עצמה, כך שאישורי הבית לא יוצאים ממנו.'},
+{c:'home',te:'Your house, from anywhere',th:'הבית שלך, מכל מקום',de:'Off the home network, Alex tries the local path first, then routes the command through her own cloud to the always-on unit at home, which runs it on the LAN and reports back. No VPN, no router setup.',dh:'כשאתה לא ברשת הביתית, אלכס מנסה קודם את המסלול המקומי, ואם אין קשר — מעבירה את הפקודה בענן שלה אל היחידה שתמיד דולקת בבית, וזו מבצעת אותה ברשת המקומית ומדווחת בחזרה. בלי VPN ובלי הגדרות ראוטר.'},
+{c:'home',te:'Automations you create by speaking',th:'אוטומציות שנוצרות בדיבור',de:'"Every morning at seven, brief me." "Every three hours, check the weather." "When mail comes in from the bank, summarize it and ping me." Alex parses the rule, saves it, and runs it from her background loop — daily, hourly, weekly, or on an incoming email.',dh:'"כל בוקר בשבע תני לי בריף". "כל שלוש שעות תבדקי מזג אוויר". "כשמגיע מייל מהבנק סכמי ותתריעי". אלכס מפרקת את הכלל, שומרת אותו ומריצה אותו מהלוּפ שרץ אצלה ברקע — יומי, כל כמה שעות, שבועי, או כשנכנס מייל.'},
+{c:'interfaces',te:'Panels, not paragraphs',th:'ממשק, לא הקראה',de:'Ask about your inbox or your chats and a real interface opens — folder rails, chat lists, reading panes, compose bars — styled in the same living light as the rest of the HUD.',dh:'שואל על המייל או על ההודעות? נפתח ממשק אמיתי – תיקיות, רשימת שיחות, חלון קריאה ושורת כתיבה – באותה שפה עיצובית של האור החי.'},
+{c:'interfaces',te:'WhatsApp, inside the HUD',th:'וואטסאפ, בתוך המערכת',de:'Chat list on one side, conversation on the other: contact photos, a separate color for every speaker in a group, image thumbnails, audio and document chips, and a compose bar that actually sends. A warm panel reopens in under a second.',dh:'רשימת השיחות מצד אחד, השיחה מהצד השני: תמונות אנשי קשר, צבע נפרד לכל דובר בקבוצה, תמונות, הודעות קוליות וקבצים, ושורת כתיבה ששולחת באמת. ממשק חם נפתח מחדש בפחות משנייה.'},
+{c:'interfaces',te:'Mail that behaves like a mail client',th:'מייל שמתנהג כמו תוכנת מייל',de:'Three panes when there\'s room — folders, messages, and the real HTML body with inline images rendered. Attachments are one tap from opening, and reply, reply-all, forward, search, flag, archive and delete sit where you expect them.',dh:'שלוש חלוניות כשיש מקום – תיקיות, הודעות, והגוף המקורי של המייל עם התמונות המוטמעות בפנים. קבצים מצורפים נפתחים בהקשה אחת, ותשובה, השב לכולם, העברה, חיפוש, דגל, ארכיון ומחיקה נמצאים בדיוק במקום שבו חיפשת אותם.'},
+{c:'interfaces',te:'Pop a conversation out',th:'שולפים שיחה לחלון משלה',de:'Any conversation detaches into a floating window you can drag, resize and maximize. It never blocks the HUD behind it, it remembers the size and place you left it, and one button docks it back.',dh:'כל שיחה נשלפת לחלון צף שאפשר לגרור, למתוח ולהגדיל. הוא לא חוסם את מה שמתרחש מאחוריו, זוכר את הגודל והמקום שהשארת, וכפתור אחד מחזיר אותו למקום.'},
+{c:'interfaces',te:'Answer straight from the notification',th:'עונים ישר מההתראה',de:'A new message arrives as a card with a reply field built in — start typing and the card stops counting down to dismiss. Mute a single chat for a set time or indefinitely, right from the same card.',dh:'הודעה חדשה מגיעה ככרטיס עם שדה תשובה בתוכו – מתחיל להקליד, והכרטיס מפסיק לרוץ להיעלם. אפשר להשתיק שיחה בודדת לזמן מוגבל או לתמיד, ישר מאותו כרטיס.'},
+{c:'interfaces',te:'The player is part of the picture',th:'הנגן הוא חלק מהתמונה',de:'A 24-bar spectrum drawn from live audio analysis, a play disc that breathes with the track\'s energy, and a full-screen music-reactive background running behind everything else.',dh:'ספקטרום של 24 עמודות שנבנה מניתוח אודיו בזמן אמת, דיסק נגינה שנושם עם עוצמת השיר, ורקע מלא-מסך שמגיב למוזיקה מאחורי הכול.'},
+{c:'interfaces',te:'Talk to the layout',th:'מדברים אל הממשק',de:'Say "minimize the player" or "close WhatsApp" and the panel obeys. The interface takes voice commands the same way the assistant does — no reaching for a mouse.',dh:'אומרים "תמזערי את הנגן" או "סגרי את הוואטסאפ" – והממשק מציית. גם הפריסה עצמה מקבלת פקודות קוליות, לא רק העוזרת.'},
+{c:'interfaces',te:'Bilingual, and elastic',th:'דו-לשוני, ונמתח לפי המסך',de:'Every panel is localized in Hebrew and English and mirrors cleanly for right-to-left. Wide screens spread into multi-pane layouts; narrow ones collapse to one pane at a time with a clear way back.',dh:'כל ממשק מתורגם לעברית ולאנגלית ומתהפך נכון לימין-לשמאל. במסך רחב הפריסה נפרסת לכמה חלוניות, ובמסך צר היא מתכנסת לחלונית אחת בכל פעם, עם דרך חזרה ברורה.'},
+{c:'autonomy',te:'A team she hands work to',th:'צוות שהיא מעבירה לו עבודה',de:'Seven named agents, each with its own persona and its own subset of tools — research, travel, finance, studio, secretary, engineering. Say what you need and Alex picks the right one, runs it across multiple steps, and comes back with a finished result instead of a list of links.',dh:'שבעה סוכנים, לכל אחד אופי וכלים משלו — מחקר, טיולים, פיננסים, סטודיו, ניהול יומן והנדסה. אתה אומר מה צריך, אלכס בוחרת את הסוכן המתאים, מריצה אותו על פני כמה שלבים וחוזרת עם תוצאה גמורה, לא עם רשימת קישורים.'},
+{c:'autonomy',te:'Delegated work runs in the background',th:'המשימות ממשיכות לרוץ ברקע',de:'She acknowledges in milliseconds and keeps the conversation going while the agent works. When it lands, the result opens as a living-light card on screen and she speaks the short version out loud.',dh:'היא מאשרת קבלה בשברירי שנייה וממשיכה את השיחה בזמן שהסוכן עובד. כשהוא מסיים, התוצאה נפתחת ככרטיס אור־חי על המסך והיא מספרת את הגרסה הקצרה בקול.'},
+{c:'autonomy',te:'She builds her own new abilities',th:'היא בונה לעצמה יכולות חדשות',de:'One agent writes a new skill, the code is compile-checked before it is allowed to land, and a reviewer agent audits it automatically. A capability can go live without rebuilding the app.',dh:'סוכן אחד כותב מיומנות חדשה, הקוד עובר בדיקת קומפילציה לפני שהוא נכנס, וסוכן ביקורת סורק אותו אוטומטית. יכולת חדשה עולה לאוויר בלי לבנות את האפליקציה מחדש.'},
+{c:'autonomy',te:'One stalled model never stops her',th:'מודל שנתקע לא עוצר אותה',de:'Every delegated run walks a chain of five independent model providers with a 60-second stall cap per call. Rate-limited, unavailable, or simply slow — it rolls to the next provider and the answer still arrives.',dh:'כל הרצה עוברת שרשרת של חמישה ספקי מודל עצמאיים, עם תקרה של 60 שניות לכל קריאה. אם אחד חסום, לא זמין או פשוט אטי — היא מגלגלת לבא בתור והתשובה בכל זאת מגיעה.'},
+{c:'autonomy',te:'She checks the world every 90 seconds',th:'היא בודקת מה קורה כל 90 שניות',de:'A background loop watches mail and calendar, raises only what actually matters, and gives a forward-looking heads-up on new events. Ask for a wider horizon in plain speech and she keeps it — and she won\'t alert you twice about the same thing, even after a restart.',dh:'לופ רקע עוקב אחרי מייל ויומן, מעלה רק את מה שבאמת חשוב, ונותן התראה מקדימה על אירועים חדשים. אפשר לבקש בקול טווח הצצה רחוק יותר והיא תזכור — ולא תתריע פעמיים על אותו דבר, גם אחרי הפעלה מחדש.'},
+{c:'autonomy',te:'From noticing to doing',th:'לא רק מתריעה — מטפלת',de:'When a message needs a personal answer, she searches your own mail and data first, then writes a reply grounded only in what she actually found — and says plainly what she couldn\'t. Spot a real date and time in the message and she offers to put it on your calendar.',dh:'כשהודעה דורשת תשובה אישית, היא קודם מחפשת בתוך המייל והנתונים שלך, ואז מנסחת תשובה שמבוססת רק על מה שהיא באמת מצאה — ואומרת בפירוש מה לא מצאה. אם יש בהודעה תאריך ושעה אמיתיים, היא תציע להוסיף את זה ליומן.'},
+{c:'autonomy',te:'Nothing irreversible without your tap',th:'שום דבר בלתי הפיך בלי נגיעה שלך',de:'Reversible work — drafting, labelling, logging — she just does, then tells you. Anything outbound (send, spend, delete, post) waits behind a phone approval with the full draft attached, runs exactly once when you approve, and discards itself after an hour.',dh:'מה שהפיך — ניסוח טיוטה, תיוג, רישום — היא פשוט עושה ואז מעדכנת. כל מה שיוצא החוצה (שליחה, חיוב, מחיקה, פרסום) ממתין לאישור בטלפון עם הטיוטה המלאה מולך, מתבצע בדיוק פעם אחת אחרי האישור, ומתבטל מעצמו אחרי שעה.'},
+{c:'autonomy',te:'You approve content, not a blank yes',th:'אתה מאשר תוכן, לא כן עיוור',de:'The approval carries the whole draft plus a one-line "here\'s what I checked" — on screen and on your phone. And a reply she writes never discloses your private details, even when asked directly: it defers, and what she found is shown to you alone, marked for your eyes only.',dh:'האישור מגיע עם הטיוטה המלאה ועם שורה אחת של "מה בדקתי" — גם על המסך וגם בטלפון. ותשובה שהיא שולחת לא חושפת מידע פרטי שלך, גם כששואלים ישירות: היא אומרת שתבדוק ותחזור, ומה שמצאה מוצג לך בלבד, מסומן לעיניך בלבד.'}
+];
+/* ================= helpers ================= */
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const smooth = t => t * t * (3 - 2 * t);
+const hex = c => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+/* deterministic pseudo-random (no Math.random at draw time, stable prints) */
+function rnd(seed) { let s = seed | 0; return () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }; }
+const RA = rnd(20260725);
+
+/* ================= motion preference ================= */
+let MOTION = 'auto';
+try { MOTION = localStorage.getItem('alexMotion') || 'auto'; } catch (e) {}
+const mq = matchMedia('(prefers-reduced-motion: reduce)');
+function still() { return MOTION === 'still' || (MOTION === 'auto' && mq.matches); }
+function applyMotion() {
+  document.documentElement.dataset.motion = still() ? 'still' : 'full';
+  $('#motion').textContent = MOTION.toUpperCase();
+}
+$('#motion').addEventListener('click', () => {
+  MOTION = MOTION === 'auto' ? 'full' : MOTION === 'full' ? 'still' : 'auto';
+  try { localStorage.setItem('alexMotion', MOTION); } catch (e) {}
+  applyMotion();
+});
+
+/* ================= one scheduler ================= */
+const JOBS = new Set();
+let last = 0, dts = [], tier = 0, raf = 0;
+function reg(fn) { JOBS.add(fn); }
+function unreg(fn) { JOBS.delete(fn); }
+function loop(t) {
+  const dt = last ? t - last : 16; last = t;
+  /* outliers (scroll jumps, tab wake, layout) are jank, not sustained load */
+  if (dt < 100) { dts.push(dt); if (dts.length > 45) dts.shift(); }
+  if (dts.length === 45 && tier < 4) {
+    const mean = dts.reduce((a, b) => a + b, 0) / 45;
+    if (mean > 26) { tier++; dts = []; if (tier === 3) resize(); }
+  }
+  for (const fn of JOBS) fn(t, dt);
+  raf = requestAnimationFrame(loop);
+}
+raf = requestAnimationFrame(loop);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
+  else if (!raf) { last = 0; raf = requestAnimationFrame(loop); }
+});
+
+/* ================= i18n ================= */
+let LANG = 'en', DIRSIGN = 1;
+function setLang(l, animate) {
+  const go = () => {
     LANG = l;
-    document.documentElement.setAttribute('lang', l);
-    document.documentElement.setAttribute('dir', l === 'he' ? 'rtl' : 'ltr');
-    document.title = l === 'he' ? 'אלכס — עוזרת AI קולית עם HUD חי' : 'Alex — a voice AI with a living HUD';
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      const entry = I18N[el.dataset.i18n];
-      if (entry) el.innerHTML = entry[l];
-    });
-    langBtn.textContent = l === 'he' ? 'EN' : 'עברית';
-  }
-  langBtn.addEventListener('click', () => setLang(LANG === 'he' ? 'en' : 'he'));
-  setLang('en');
+    const rtl = l === 'he';
+    DIRSIGN = rtl ? -1 : 1;
+    const h = document.documentElement;
+    h.setAttribute('lang', l);
+    h.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+    h.style.setProperty('--sgn', String(DIRSIGN));
+    document.title = rtl ? 'אלכס — עוזרת AI קולית עם HUD חי' : 'Alex — a voice AI with a living HUD';
+    $$('[data-en]').forEach(el => { const v = el.dataset[l]; if (v != null) el.textContent = v; });
+    $$('[data-enh]').forEach(el => { const v = el.dataset[l === 'he' ? 'heh' : 'enh']; if (v != null) el.innerHTML = v; });
+    const q = $('#q'); if (q) q.placeholder = q.dataset[l === 'he' ? 'phHe' : 'phEn'];
+    $('#lang').textContent = rtl ? 'EN' : 'עברית';
+    renderGram(); renderCaps(); renderLedger(); renderAgents(); renderRibbon(); acSay();
+    flash = 0.45;
+  };
+  if (animate && !still()) {
+    const w = $('#wipe');
+    w.classList.remove('go'); void w.offsetWidth; w.classList.add('go');
+    setTimeout(go, 200);
+  } else go();
+}
+$('#lang').addEventListener('click', () => setLang(LANG === 'he' ? 'en' : 'he', true));
 
-  /* ================= Scroll-driven shapeshifting particle being ================= */
-  const lerp = (a, b, t) => a + (b - a) * t;
-  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-  const smooth = t => t * t * (3 - 2 * t);
-  const hex = c => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
-
-  const N = 420;
-
-  /* ---------- Shape point clouds (normalized -1..1) ---------- */
-  function shapeGalaxy() {
-    const pts = [];
-    const GA = Math.PI * (3 - Math.sqrt(5));
-    for (let i = 0; i < N; i++) {
-      const r = Math.sqrt((i + 0.5) / N);
-      const a = i * GA + r * 2.2;
-      pts.push({ x: Math.cos(a) * r, y: Math.sin(a) * r * 0.92 });
-    }
-    return pts;
-  }
-  function shapeWave() {
-    const pts = [];
-    for (let i = 0; i < N; i++) {
-      const strand = i % 4;
-      const x = -1 + 2 * ((i / 4) / (N / 4));
-      const env = Math.cos(x * Math.PI / 2);
-      const y = Math.sin(x * Math.PI * (2 + strand * 0.9) + strand * 1.7) * 0.5 * env + (strand - 1.5) * 0.045;
-      pts.push({ x, y });
-    }
-    return pts;
-  }
-  const netNodes = [];
-  function shapeNet() {
-    netNodes.length = 0;
-    netNodes.push({ x: 0, y: 0 });
-    [[0.42, 5, 0.3], [0.72, 8, 1.1], [1, 11, 0.2]].forEach(([r, n, ph]) => {
-      for (let i = 0; i < n; i++) {
-        const a = (i / n) * Math.PI * 2 + ph;
-        netNodes.push({ x: Math.cos(a) * r, y: Math.sin(a) * r * 0.9 });
-      }
-    });
-    const pts = [];
-    for (let i = 0; i < N; i++) {
-      const nd = netNodes[i % netNodes.length];
-      const a = Math.random() * Math.PI * 2, rr = Math.random() * 0.09;
-      pts.push({ x: nd.x + Math.cos(a) * rr, y: nd.y + Math.sin(a) * rr });
-    }
-    return pts;
-  }
-  function shapeChart() {
-    const pts = [];
-    const ring = Math.floor(N * 0.42);
-    for (let i = 0; i < ring; i++) {
-      const a = (i / ring) * Math.PI * 2;
-      const rr = 1 + (Math.random() - 0.5) * 0.05;
-      pts.push({ x: Math.cos(a) * rr, y: Math.sin(a) * rr * 0.95 });
-    }
-    const bars = [[-0.42, 0.42], [0, 0.66], [0.42, 0.95]];
-    const per = Math.ceil((N - ring) / 3);
-    bars.forEach(([bx, bh]) => {
-      for (let i = 0; i < per && pts.length < N; i++) {
-        pts.push({
-          x: bx + (Math.random() - 0.5) * 0.16,
-          y: 0.55 - Math.random() * bh,
-        });
-      }
-    });
-    return pts;
-  }
-  function shapeHouse() {
-    const cv2 = document.createElement('canvas');
-    cv2.width = cv2.height = 220;
-    const c2 = cv2.getContext('2d');
-    c2.fillStyle = '#fff';
-    c2.fillRect(52, 100, 116, 86);            /* body */
-    c2.beginPath();                           /* roof */
-    c2.moveTo(30, 104); c2.lineTo(110, 34); c2.lineTo(190, 104);
-    c2.closePath(); c2.fill();
-    c2.clearRect(94, 130, 34, 56);            /* door */
-    c2.clearRect(140, 122, 22, 22);           /* window */
-    const img = c2.getImageData(0, 0, 220, 220).data;
-    const pool = [];
-    for (let y = 0; y < 220; y += 2)
-      for (let x = 0; x < 220; x += 2)
-        if (img[(y * 220 + x) * 4 + 3] > 128) pool.push({ x: (x - 110) / 95, y: (y - 112) / 95 });
-    const pts = [];
-    for (let i = 0; i < N; i++) pts.push(pool[Math.floor(Math.random() * pool.length)]);
-    return pts;
-  }
-  function shapeHeart() {
-    const pts = [];
-    for (let i = 0; i < N; i++) {
-      const t = (i / N) * Math.PI * 2;
-      const s = 0.5 + Math.sqrt(Math.random()) * 0.5;    /* fill inward */
-      const x = 16 * Math.pow(Math.sin(t), 3);
-      const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-      pts.push({ x: (x / 17) * s, y: (-y / 17) * s + 0.05 });
-    }
-    return pts;
-  }
-  const SHAPES = [shapeGalaxy(), shapeWave(), shapeNet(), shapeChart(), shapeHouse(), shapeHeart()];
-
-  /* ---------- Chapter keyframes ---------- */
-  const KEYS = [
-    { p: 0.00, col: '#8fb4ff', shape: 0, rot: 1.0, jit: 0.5, label: 'LIVING-LIGHT' },
-    { p: 0.21, col: '#4fd8ff', shape: 1, rot: 0.0, jit: 0.9, label: 'VOICE' },
-    { p: 0.39, col: '#a98bff', shape: 2, rot: 0.15, jit: 0.35, label: 'MIND' },
-    { p: 0.57, col: '#ffc46b', shape: 3, rot: 0.0, jit: 0.3, label: 'FINANCE' },
-    { p: 0.75, col: '#4fe3b0', shape: 4, rot: 0.0, jit: 0.35, label: 'HOME' },
-    { p: 0.93, col: '#ff86ae', shape: 5, rot: 0.0, jit: 0.8, label: 'SOUL' },
-    { p: 1.00, col: '#b48cff', shape: 5, rot: 0.0, jit: 0.6, label: 'SOUL' },
-  ];
-  function segment(p) {
-    let i = 0;
-    while (i < KEYS.length - 2 && p > KEYS[i + 1].p) i++;
-    const a = KEYS[i], b = KEYS[i + 1];
-    const t = clamp((p - a.p) / (b.p - a.p), 0, 1);
-    /* plateau: hold the shape 22% on each side, morph in the middle */
-    const m = smooth(clamp((t - 0.22) / 0.56, 0, 1));
-    const ca = hex(a.col), cb = hex(b.col);
-    return {
-      a, b, m,
-      col: [lerp(ca[0], cb[0], m), lerp(ca[1], cb[1], m), lerp(ca[2], cb[2], m)],
-      rot: lerp(a.rot, b.rot, m),
-      jit: lerp(a.jit, b.jit, m),
-      label: m < 0.5 ? a.label : b.label,
-      nearShape: m < 0.5 ? a.shape : b.shape,
-    };
-  }
-
-  /* ---------- Canvas ---------- */
-  const cv = document.getElementById('orb');
-  const ctx = cv.getContext('2d');
-  const DPR = Math.min(devicePixelRatio || 1, 2);
-  let W = 0, H = 0;
-  function resize() {
-    W = innerWidth; H = innerHeight;
-    cv.width = W * DPR; cv.height = H * DPR;
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    ctx.fillStyle = '#04050c';
-    ctx.fillRect(0, 0, W, H);
-  }
-  resize();
-  addEventListener('resize', resize);
-
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  /* particle personalities */
-  const P = [];
+/* ================= shapes ================= */
+const N = 420;
+function shapeGalaxy() {
+  const p = [], GA = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < N; i++) { const r = Math.sqrt((i + .5) / N), a = i * GA + r * 2.2; p.push({ x: Math.cos(a) * r, y: Math.sin(a) * r * .92 }); }
+  return p;
+}
+function shapeWave() {
+  const p = [];
   for (let i = 0; i < N; i++) {
-    P.push({ ph: Math.random() * 7, sp: 0.5 + Math.random(), sz: 0.8 + Math.random() * 1.7, al: 0.35 + Math.random() * 0.55 });
+    const st = i % 4, x = -1 + 2 * ((i / 4) / (N / 4)), env = Math.cos(x * Math.PI / 2);
+    p.push({ x, y: Math.sin(x * Math.PI * (2 + st * .9) + st * 1.7) * .5 * env + (st - 1.5) * .045 });
   }
-  /* 3D starfield */
-  const S = [];
-  for (let i = 0; i < 130; i++) {
-    S.push({ x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2, z: 0.08 + Math.random() * 0.92 });
+  return p;
+}
+function shapeTwin() {
+  const p = [], r = rnd(4242);
+  for (let i = 0; i < N; i++) {
+    const side = i < N / 2 ? -1 : 1;
+    const a = r() * Math.PI * 2, rr = Math.sqrt(r()) * .42;
+    p.push({ x: side * .34 + Math.cos(a) * rr, y: Math.sin(a) * rr * 1.05 });
   }
+  return p;
+}
+const netNodes = [];
+function shapeNet() {
+  netNodes.length = 0; netNodes.push({ x: 0, y: 0 });
+  [[.42, 5, .3], [.72, 8, 1.1], [1, 11, .2]].forEach(([r, n, ph]) => {
+    for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + ph; netNodes.push({ x: Math.cos(a) * r, y: Math.sin(a) * r * .9 }); }
+  });
+  const p = [], r = rnd(777);
+  for (let i = 0; i < N; i++) { const nd = netNodes[i % netNodes.length], a = r() * Math.PI * 2, rr = r() * .09; p.push({ x: nd.x + Math.cos(a) * rr, y: nd.y + Math.sin(a) * rr }); }
+  return p;
+}
+function shapeChart() {
+  const p = [], ring = Math.floor(N * .42), r = rnd(1313);
+  for (let i = 0; i < ring; i++) { const a = (i / ring) * Math.PI * 2, rr = 1 + (r() - .5) * .05; p.push({ x: Math.cos(a) * rr, y: Math.sin(a) * rr * .95 }); }
+  const bars = [[-.42, .42], [0, .66], [.42, .95]], per = Math.ceil((N - ring) / 3);
+  bars.forEach(([bx, bh]) => { for (let i = 0; i < per && p.length < N; i++) p.push({ x: bx + (r() - .5) * .16, y: .55 - r() * bh }); });
+  while (p.length < N) p.push(p[p.length - 1]);
+  return p;
+}
+function sampleGlyph(draw, seed) {
+  const S = 220, c2 = document.createElement('canvas'); c2.width = c2.height = S;
+  const x2 = c2.getContext('2d'); draw(x2, S);
+  const d = x2.getImageData(0, 0, S, S).data, pool = [];
+  for (let y = 0; y < S; y += 2) for (let x = 0; x < S; x += 2) if (d[(y * S + x) * 4 + 3] > 128) pool.push({ x: (x - S / 2) / 95, y: (y - S / 2 - 2) / 95 });
+  const p = [], r = rnd(seed);
+  for (let i = 0; i < N; i++) p.push(pool.length ? pool[Math.floor(r() * pool.length)] : { x: 0, y: 0 });
+  return p;
+}
+const shapeHouse = () => sampleGlyph((c, S) => {
+  c.fillStyle = '#fff'; c.fillRect(52, 100, 116, 86);
+  c.beginPath(); c.moveTo(30, 104); c.lineTo(110, 34); c.lineTo(190, 104); c.closePath(); c.fill();
+  c.clearRect(94, 130, 34, 56); c.clearRect(140, 122, 22, 22);
+}, 5150);
+const shapePanels = () => sampleGlyph((c, S) => {
+  c.strokeStyle = '#fff'; c.lineWidth = 5;
+  const rr = (x, y, w, h) => { c.beginPath(); c.roundRect(x, y, w, h, 8); c.stroke(); };
+  rr(24, 44, 36, 118); rr(66, 44, 54, 118); rr(126, 44, 70, 118);
+  c.lineWidth = 4; c.beginPath();
+  for (let i = 0; i < 24; i++) { const x = 26 + i * 7.2, h = 6 + ((i * 37) % 13); c.moveTo(x, 186); c.lineTo(x, 186 - h); }
+  c.stroke();
+}, 9090);
+function shapeSwarm() {
+  const p = [], r = rnd(31337);
+  for (let i = 0; i < 140; i++) { const a = r() * Math.PI * 2, rr = Math.sqrt(r()) * .26; p.push({ x: Math.cos(a) * rr, y: Math.sin(a) * rr * .95 }); }
+  for (let s = 0; s < 7; s++) {
+    const ang = (s / 7) * Math.PI * 2 + .4, cx = Math.cos(ang) * .95, cy = Math.sin(ang) * .62;
+    for (let i = 0; i < 40; i++) { const a = r() * Math.PI * 2, rr = Math.sqrt(r()) * .17; p.push({ x: cx + Math.cos(a) * rr, y: cy + Math.sin(a) * rr }); }
+  }
+  while (p.length < N) p.push({ x: 0, y: 0 });
+  return p.slice(0, N);
+}
+function shapeHeart() {
+  const p = [], r = rnd(999);
+  for (let i = 0; i < N; i++) {
+    const t = (i / N) * Math.PI * 2, s = .5 + Math.sqrt(r()) * .5;
+    const x = 16 * Math.pow(Math.sin(t), 3);
+    const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+    p.push({ x: (x / 17) * s, y: (-y / 17) * s + .05 });
+  }
+  return p;
+}
+const SHAPES = [shapeGalaxy(), shapeWave(), shapeTwin(), shapeNet(), shapeChart(), shapeHouse(), shapePanels(), shapeSwarm(), shapeHeart()];
 
-  const captions = [...document.querySelectorAll('.caption')].map(el => ({
-    el, start: parseFloat(el.dataset.start), end: parseFloat(el.dataset.end),
-  }));
-  const journey = document.getElementById('journey');
-  const bar = document.getElementById('bar');
-  const mode = document.getElementById('mode');
-  let lastLabel = '', lastShape = 0, flash = 0, shock = null;
-  let lastScroll = scrollY, vel = 0;
+/* ================= chapters ================= */
+const KEYS = [
+  { k: 'GALAXY',     p: 0.000, col: '#8fb4ff', sh: 0, rot: 1.0, jit: .5, cam: { x: 0, y: 0, z: 1, r: 0 }, cut: 'dissolve' },
+  { k: 'VOICE',      p: 0.125, col: '#4fd8ff', sh: 1, rot: 0,   jit: .9, cam: { x: 0, y: .02, z: 1.06, r: 0 }, cut: 'shutter' },
+  { k: 'IDENTITY',   p: 0.250, col: '#ffb4d8', sh: 2, rot: .05, jit: .5, cam: { x: 0, y: 0, z: .98, r: -.02 }, cut: 'iris' },
+  { k: 'MIND',       p: 0.375, col: '#a98bff', sh: 3, rot: .15, jit: .35, cam: { x: 0, y: 0, z: 1.02, r: .03 }, cut: 'leak' },
+  { k: 'FINANCE',    p: 0.500, col: '#ffc46b', sh: 4, rot: 0,   jit: .3, cam: { x: 0, y: -.02, z: .94, r: 0 }, cut: 'shutter' },
+  { k: 'HOME',       p: 0.625, col: '#4fe3b0', sh: 5, rot: 0,   jit: .35, cam: { x: 0, y: 0, z: 1, r: 0 }, cut: 'iris' },
+  { k: 'INTERFACES', p: 0.750, col: '#cfe0ff', sh: 6, rot: 0,   jit: .22, cam: { x: 0, y: 0, z: 1.04, r: 0 }, cut: 'dissolve' },
+  { k: 'AUTONOMY',   p: 0.875, col: '#c9a0ff', sh: 7, rot: .28, jit: .5, cam: { x: 0, y: 0, z: .96, r: .04 }, cut: 'leak' },
+  { k: 'TRUST',      p: 1.000, col: '#ff86ae', sh: 8, rot: 0,   jit: .8, cam: { x: 0, y: 0, z: 1.05, r: 0 }, cut: 'iris' },
+];
+const SEG = KEYS[1].p;
+function segment(p) {
+  let i = 0; while (i < KEYS.length - 2 && p > KEYS[i + 1].p) i++;
+  const a = KEYS[i], b = KEYS[i + 1];
+  const t = clamp((p - a.p) / (b.p - a.p), 0, 1);
+  const m = smooth(clamp((t - .3) / .4, 0, 1));
+  const ca = hex(a.col), cb = hex(b.col);
+  return {
+    a, b, m, i,
+    col: [lerp(ca[0], cb[0], m), lerp(ca[1], cb[1], m), lerp(ca[2], cb[2], m)],
+    rot: lerp(a.rot, b.rot, m), jit: lerp(a.jit, b.jit, m),
+    cam: { x: lerp(a.cam.x, b.cam.x, m), y: lerp(a.cam.y, b.cam.y, m), z: lerp(a.cam.z, b.cam.z, m), r: lerp(a.cam.r, b.cam.r, m) },
+    near: m < .5 ? a : b,
+  };
+}
 
-  function frame(t) {
-    const T = t / 1000;
+/* ================= canvas ================= */
+const cv = $('#orb'), ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  W = innerWidth; H = innerHeight;
+  DPR = Math.min(devicePixelRatio || 1, W < 420 ? 1.5 : 2);
+  if (tier >= 3) DPR = Math.min(DPR, 1.25);
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#04050c'; ctx.fillRect(0, 0, W, H);
+}
+resize();
+let rzT = 0, lastH = innerHeight;
+addEventListener('resize', () => {
+  if (Math.abs(innerHeight - lastH) < 120 && innerWidth === W) return;
+  clearTimeout(rzT); rzT = setTimeout(() => { lastH = innerHeight; resize(); }, 150);
+});
+
+/* particles: z-depth + cluster ids, sorted once */
+const P = [];
+for (let i = 0; i < N; i++) {
+  const u = RA();
+  P.push({
+    i, ph: RA() * 7, sp: .5 + RA(), sz: .8 + RA() * 1.7, al: .35 + RA() * .55,
+    z: u < .25 ? .72 : u < .75 ? 1 : 1.34,
+    cl: i % 5, tw: i < N / 2 ? 0 : 1, sat: i < 140 ? -1 : Math.floor((i - 140) / 40),
+  });
+}
+const ORD = P.map(p => p.i).sort((x, y) => P[x].z - P[y].z);
+const S3 = [];
+for (let i = 0; i < 130; i++) S3.push({ x: (RA() - .5) * 2, y: (RA() - .5) * 2, z: .08 + RA() * .92 });
+
+/* ================= hero state ================= */
+const journey = $('#journey');
+const captions = $$('.caption').map(el => {
+  const k = KEYS.find(x => x.k === el.dataset.ch);
+  const i = KEYS.indexOf(k);
+  return { el, start: i === 0 ? -.25 : k.p - .042, end: i === KEYS.length - 1 ? 1.06 : k.p + .042 };
+});
+const mode = $('#mode'), tel = $('#tel'), skip = $('#skip'), listenChip = $('#listenChip'), echoChip = $('#echoChip');
+let flash = 0, shock = null, cut = null, lastShape = -1, vel = 0, lastScroll = scrollY;
+let idle = 0, exhale = 0, pulseCol = null;
+const cam = { x: 0, y: 0, z: 1, r: 0 };
+const GC = [143, 180, 255];
+let t0 = 0, IGN = 2.4;
+if (still()) t0 = -IGN * 1000;
+
+/* progress + rail from KEYS */
+const prog = $('#prog'), rail = $('#rail');
+KEYS.forEach((k, i) => {
+  prog.insertAdjacentHTML('beforeend', '<i data-s="' + i + '"></i>');
+  const b = document.createElement('button');
+  b.innerHTML = '<i></i>'; b.title = k.k; b.setAttribute('aria-label', k.k);
+  b.addEventListener('click', () => {
     const max = journey.offsetHeight - innerHeight;
-    const p = clamp((scrollY - journey.offsetTop) / max, 0, 1);
+    scrollTo({ top: journey.offsetTop + max * k.p + (i === KEYS.length - 1 ? -2 : 2), behavior: still() ? 'auto' : 'smooth' });
+  });
+  rail.appendChild(b);
+});
+const segs = $$('.prog i'), dots = $$('.rail button');
+$('#skip button').addEventListener('click', () => {
+  scrollTo({ top: journey.offsetTop + (journey.offsetHeight - innerHeight) * KEYS[1].p + 2, behavior: 'smooth' });
+});
 
-    /* scroll velocity → warp speed */
-    vel = lerp(vel, Math.min(Math.abs(scrollY - lastScroll), 90), 0.12);
-    lastScroll = scrollY;
+/* tap to interrupt during VOICE */
+$('#stage').addEventListener('pointerdown', e => {
+  if (e.target.closest('button')) return;
+  const s = segment(heroP());
+  if (s.near.k !== 'VOICE') return;
+  rings.length = 0;
+  echoChip.classList.add('on');
+  flash = .3;
+  setTimeout(() => echoChip.classList.remove('on'), 1100);
+});
 
-    const s = segment(p);
-    const [r, g, b] = s.col.map(Math.round);
-    const col = a => `rgba(${r},${g},${b},${a})`;
+/* section colour adoption + pulses */
+let secCol = null, secLbl = '';
+const secObs = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if (!e.isIntersecting) return;
+    secCol = getComputedStyle(e.target).getPropertyValue('--c').trim() || null;
+    secLbl = (e.target.id || '').toUpperCase();
+  });
+}, { threshold: .3 });
+$$('.sec').forEach(s => secObs.observe(s));
+addEventListener('alex:pulse', e => {
+  pulseCol = e.detail && e.detail.col ? e.detail.col : null;
+  flash = .55; shock = { r: 12, a: .7 };
+  if (e.detail && e.detail.haptic && navigator.vibrate) { try { navigator.vibrate(8); } catch (_) {} }
+});
+function pulse(col, haptic) { dispatchEvent(new CustomEvent('alex:pulse', { detail: { col, haptic } })); }
 
-    /* chapter transition: flash + shockwave */
-    if (s.nearShape !== lastShape) {
-      lastShape = s.nearShape;
-      flash = 0.5;
-      shock = { r: 10, a: 0.6 };
-    }
+/* hero progress */
+function heroP() {
+  const max = journey.offsetHeight - innerHeight;
+  return clamp((scrollY - journey.offsetTop) / max, 0, 1);
+}
+let heroIn = true;
+/* 5% keeps a sticky edge sitting exactly at y=0 from counting as "in view" */
+new IntersectionObserver(es => { heroIn = es[0].isIntersecting; }, { threshold: .05 }).observe($('#stage'));
 
-    const cx = W / 2, cy = H * 0.4;
-    let R = Math.min(W, H) * 0.21;
-    /* heart pulse */
-    R *= 1 + 0.05 * Math.sin(T * 2.6) * (s.a.shape === 5 || s.b.shape === 5 ? 1 : 0);
+const rings = [];
+let tokens = [], deadEdge = -1, deadT = 0;
+for (let i = 0; i < 8; i++) tokens.push({ e: i * 3 + 1, t: RA() });
 
-    /* trails: translucent fill instead of clear */
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = reduced ? '#04050c' : 'rgba(4,5,12,0.28)';
-    ctx.fillRect(0, 0, W, H);
+/* ================= main hero frame ================= */
+let lastTel = '', lastLbl = '', lastSeg = -1;
+function frame(t, dt) {
+  if (!t0) t0 = t;
+  const T = t / 1000;
+  const bt = (t - t0) / 1000;
+  const ST = still();
+  const p = heroP();
 
-    ctx.globalCompositeOperation = 'lighter';
+  vel = lerp(vel, Math.min(Math.abs(scrollY - lastScroll), 90), .12);
+  if (Math.abs(scrollY - lastScroll) > 1) { idle = 0; exhale = lerp(exhale, 0, .3); }
+  else { idle += dt; if (idle > 2800) exhale = lerp(exhale, 1, .035); }
+  lastScroll = scrollY;
 
-    /* 3D starfield — warps with scroll speed */
-    const warp = 0.05 + vel * 0.012;
+  const s = segment(p);
+  let tgt = s.col;
+  if (!heroIn && (pulseCol || secCol)) tgt = hex(pulseCol || secCol);
+  else if (pulseCol) tgt = hex(pulseCol).map((v, i) => lerp(s.col[i], v, .6));
+  for (let i = 0; i < 3; i++) GC[i] = lerp(GC[i], tgt[i], ST ? 1 : .09);
+  const cr = GC;
+  const r = Math.round(cr[0]), g = Math.round(cr[1]), b = Math.round(cr[2]);
+  const col = a => 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  document.documentElement.style.setProperty('--c', 'rgb(' + r + ',' + g + ',' + b + ')');
+
+  /* chapter change → cut */
+  if (s.near.sh !== lastShape) {
+    if (lastShape >= 0) { flash = .5; shock = { r: 10, a: .6 }; cut = { type: s.near.cut, t: 0 }; }
+    lastShape = s.near.sh;
+  }
+
+  /* letterbox: cold open + closing */
+  const lbP = ST ? 0 : bt < 1.1 ? 1 : bt < 2.1 ? 1 - (bt - 1.1) : 0;
+  const closeP = heroIn ? clamp((p - .965) / .035, 0, 1) * .55 : 0;
+  const lbShow = Math.max(lbP, closeP);
+  $('#lbt').style.transform = 'translateY(' + (-100 + lbShow * 100) + '%)';
+  $('#lbb').style.transform = 'translateY(' + (100 - lbShow * 100) + '%)';
+
+  const cx = W / 2, cy = H * .4;
+  let R = Math.min(W, H) * .2;
+  if (s.a.sh === 8 || s.b.sh === 8) R *= 1 + .05 * Math.sin(T * 2.6);
+
+  /* camera */
+  const k2 = ST ? 1 : .07;
+  cam.x = lerp(cam.x, s.cam.x + (heroIn ? 0 : .3 * DIRSIGN), k2);
+  cam.y = lerp(cam.y, s.cam.y, k2);
+  cam.z = lerp(cam.z, s.cam.z * (heroIn ? 1 : .55) * (1 + exhale * .02), k2);
+  cam.r = lerp(cam.r, s.cam.r * (ST ? 0 : 1), k2);
+
+  /* trails */
+  ctx.globalCompositeOperation = 'source-over';
+  const trail = ST || tier >= 2 ? 1 : (vel > 24 ? .18 : .28 + exhale * .08);
+  ctx.fillStyle = trail >= 1 ? '#04050c' : 'rgba(4,5,12,' + trail + ')';
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'lighter';
+
+  /* starfield (hero only) */
+  if (heroIn) {
+    const warp = .05 + vel * .012;
     ctx.lineCap = 'round';
-    S.forEach(st => {
+    for (const st of S3) {
       const pz = st.z;
-      st.z -= warp * 0.016 * (reduced ? 0.3 : 1);
-      if (st.z <= 0.05) { st.x = (Math.random() - 0.5) * 2; st.y = (Math.random() - 0.5) * 2; st.z = 1; return; }
-      const k = Math.min(W, H) * 0.5;
-      const x1 = cx + (st.x / pz) * k, y1 = cy + (st.y / pz) * k;
-      const x2 = cx + (st.x / st.z) * k, y2 = cy + (st.y / st.z) * k;
-      const a = (1 - st.z) * 0.5;
-      ctx.strokeStyle = `rgba(190,205,255,${a})`;
+      st.z -= warp * .016 * (ST ? .25 : 1);
+      if (st.z <= .05) { st.x = (RA() - .5) * 2; st.y = (RA() - .5) * 2; st.z = 1; continue; }
+      const kk = Math.min(W, H) * .5 * cam.z * .6;
+      const a = (1 - st.z) * .5;
+      ctx.strokeStyle = 'rgba(190,205,255,' + a + ')';
       ctx.lineWidth = (1 - st.z) * 2;
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    });
-
-    /* ambient nebula */
-    let gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 2.8);
-    gr.addColorStop(0, col(0.34));
-    gr.addColorStop(0.4, col(0.1));
-    gr.addColorStop(1, col(0));
-    ctx.fillStyle = gr;
-    ctx.beginPath(); ctx.arc(cx, cy, R * 2.8, 0, 7); ctx.fill();
-
-    /* morphing particle being */
-    const A = SHAPES[s.a.shape], B = SHAPES[s.b.shape];
-    const ang = T * 0.12 * s.rot;
-    const ca_ = Math.cos(ang), sa_ = Math.sin(ang);
-    const jit = reduced ? 0.1 : s.jit;
-    for (let i = 0; i < N; i++) {
-      const pa = A[i], pb = B[i], pp = P[i];
-      let x = lerp(pa.x, pb.x, s.m), y = lerp(pa.y, pb.y, s.m);
-      const rx = x * ca_ - y * sa_, ry = x * sa_ + y * ca_;
-      const wob = Math.sin(T * pp.sp * 2 + pp.ph) * 0.035 * jit;
-      const px = cx + (rx + wob) * R;
-      const py = cy + (ry + Math.cos(T * pp.sp * 1.7 + pp.ph) * 0.035 * jit) * R;
-      ctx.fillStyle = col(pp.al);
-      ctx.beginPath(); ctx.arc(px, py, pp.sz, 0, 7); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx + (st.x / pz) * kk, cy + (st.y / pz) * kk);
+      ctx.lineTo(cx + (st.x / st.z) * kk, cy + (st.y / st.z) * kk);
+      ctx.stroke();
     }
+  }
 
-    /* neural links when the mind is present */
-    const netW = (s.a.shape === 2 ? 1 - s.m : 0) + (s.b.shape === 2 ? s.m : 0);
-    if (netW > 0.05) {
-      ctx.strokeStyle = col(0.22 * netW);
+  /* ignition streak */
+  if (!ST && bt < 1.5) {
+    const a = bt < .45 ? ([0, 1, .1, 1, .35, 1][Math.floor(bt / .075)] || 1) * .5 : Math.max(0, 1 - (bt - .45) / 1.05) * .5;
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(1, .05);
+    const gg = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(W, H));
+    gg.addColorStop(0, 'rgba(200,220,255,' + a + ')'); gg.addColorStop(1, 'rgba(200,220,255,0)');
+    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(0, 0, Math.max(W, H), 0, 7); ctx.fill(); ctx.restore();
+  }
+
+  ctx.save();
+  ctx.translate(cx + cam.x * R, cy + cam.y * R);
+  if (cam.r) ctx.rotate(cam.r);
+  ctx.scale(cam.z, cam.z);
+  ctx.translate(-cx, -cy);
+
+  /* nebula */
+  const neb = heroIn ? .34 : .16;
+  const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 2.8);
+  gr.addColorStop(0, col(neb)); gr.addColorStop(.4, col(neb * .3)); gr.addColorStop(1, col(0));
+  ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, R * 2.8, 0, 7); ctx.fill();
+
+  /* god rays */
+  if (heroIn && !ST && tier < 1) {
+    const ia = .05 + flash * .25 + exhale * .03;
+    ctx.fillStyle = col(ia);
+    for (let i = 0; i < 5; i++) {
+      const a = T * .04 + i * (Math.PI * 2 / 5) + Math.sin(T * .3 + i) * .08;
+      const wdt = .1 + exhale * .06;
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(a - wdt) * R * 9, cy + Math.sin(a - wdt) * R * 9);
+      ctx.lineTo(cx + Math.cos(a + wdt) * R * 9, cy + Math.sin(a + wdt) * R * 9);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+
+  /* particle field */
+  const A = SHAPES[s.a.sh], B = SHAPES[s.b.sh];
+  const ang = T * .12 * s.rot * (ST ? 0 : 1);
+  const ca_ = Math.cos(ang), sa_ = Math.sin(ang);
+  const jit = ST ? .08 : s.jit * (1 - exhale * .3);
+  const NN = tier >= 4 ? 260 : N;
+  const active = heroIn ? NN : 140;
+  const gAlpha = heroIn ? 1 : .35;
+  const nearK = s.near.k;
+
+  /* per-chapter physics scalars */
+  const envV = nearK === 'VOICE' ? Math.max(0, Math.sin(T * 1.7) * Math.sin(T * .31) * 1.4) : 0;
+  const fis = nearK === 'IDENTITY' ? (.5 + .5 * Math.sin(T * .6)) : 0;
+  const sweep = nearK === 'FINANCE' ? cy + R * (.55 - ((T % 2.2) / 2.2) * .95) : -1e9;
+  const roomLit = nearK === 'HOME' ? Math.floor(T * 1.2) % 5 : -1;
+  const satPush = nearK === 'AUTONOMY' ? agSel : -1;
+
+  const buckets = [[], [], [], []];
+  for (let n = 0; n < active; n++) {
+    const pi = ORD[n], pa = A[pi], pb = B[pi], pp = P[pi];
+    let x = lerp(pa.x, pb.x, s.m), y = lerp(pa.y, pb.y, s.m);
+    if (fis) { x += (pp.tw ? 1 : -1) * fis * .18; }
+    if (satPush >= 0 && pp.sat === satPush) { x *= 1.16; y *= 1.16; }
+    const rx = (x * ca_ - y * sa_) * pp.z, ry = (x * sa_ + y * ca_) * pp.z;
+    const wob = Math.sin(T * pp.sp * 2 + pp.ph) * .035 * jit;
+    const px = cx + (rx + wob) * R;
+    let py = cy + (ry + Math.cos(T * pp.sp * 1.7 + pp.ph) * .035 * jit) * R;
+    if (envV) py += Math.sin(pp.ph + T * 3) * envV * R * .06;
+    if (!ST) py += (pp.z - 1) * vel * .35;
+    let al = pp.al * pp.z * gAlpha;
+    if (envV) al *= .55 + envV * .5;
+    if (sweep > -1e8 && py < sweep) al *= 1.9;
+    if (roomLit >= 0) al *= pp.cl === roomLit ? 1.5 : .55;
+    al = clamp(al, 0, 1);
+    const bi = al > .75 ? 3 : al > .5 ? 2 : al > .28 ? 1 : 0;
+    buckets[bi].push(px, py, pp.sz * pp.z);
+  }
+  const BA = [.2, .4, .62, .88];
+  for (let bi = 0; bi < 4; bi++) {
+    const arr = buckets[bi]; if (!arr.length) continue;
+    ctx.fillStyle = col(BA[bi] * gAlpha);
+    ctx.beginPath();
+    for (let i = 0; i < arr.length; i += 3) { ctx.moveTo(arr[i] + arr[i + 2], arr[i + 1]); ctx.arc(arr[i], arr[i + 1], arr[i + 2], 0, 7); }
+    ctx.fill();
+  }
+  /* chromatic aberration on fast scroll */
+  if (heroIn && !ST && tier < 2 && vel > 18) {
+    const off = Math.min((vel - 18) * .32, 8) * DIRSIGN;
+    ctx.fillStyle = 'rgba(255,120,120,.2)';
+    ctx.beginPath();
+    for (let i = 0; i < buckets[3].length; i += 3) { const a2 = buckets[3][i] + off; ctx.moveTo(a2 + buckets[3][i + 2], buckets[3][i + 1]); ctx.arc(a2, buckets[3][i + 1], buckets[3][i + 2], 0, 7); }
+    ctx.fill();
+    ctx.fillStyle = 'rgba(120,160,255,.2)';
+    ctx.beginPath();
+    for (let i = 0; i < buckets[1].length; i += 3) { const a2 = buckets[1][i] - off; ctx.moveTo(a2 + buckets[1][i + 2], buckets[1][i + 1]); ctx.arc(a2, buckets[1][i + 1], buckets[1][i + 2], 0, 7); }
+    ctx.fill();
+  }
+
+  if (heroIn) {
+    /* neural links + token pulses */
+    const netW = (s.a.sh === 3 ? 1 - s.m : 0) + (s.b.sh === 3 ? s.m : 0);
+    if (netW > .05) {
+      if (!ST && T - deadT > 4) { deadT = T; deadEdge = 1 + Math.floor(RA() * (netNodes.length - 1)); }
       ctx.lineWidth = 1;
       for (let i = 1; i < netNodes.length; i++) {
         const n1 = netNodes[i], n2 = netNodes[(i * 3) % netNodes.length];
         const x1 = cx + (n1.x * ca_ - n1.y * sa_) * R, y1 = cy + (n1.x * sa_ + n1.y * ca_) * R;
         const x2 = cx + (n2.x * ca_ - n2.y * sa_) * R, y2 = cy + (n2.x * sa_ + n2.y * ca_) * R;
+        ctx.strokeStyle = col((i === deadEdge ? .05 : .22) * netW);
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
       }
+      ctx.fillStyle = col(.95 * netW);
+      ctx.beginPath();
+      for (const tk of tokens) {
+        tk.t += .012; if (tk.t > 1) { tk.t = 0; if (tk.e === deadEdge) tk.e = (tk.e % (netNodes.length - 1)) + 1; }
+        const i = tk.e, n1 = netNodes[i], n2 = netNodes[(i * 3) % netNodes.length];
+        const x1 = cx + (n1.x * ca_ - n1.y * sa_) * R, y1 = cy + (n1.x * sa_ + n1.y * ca_) * R;
+        const x2 = cx + (n2.x * ca_ - n2.y * sa_) * R, y2 = cy + (n2.x * sa_ + n2.y * ca_) * R;
+        const px2 = lerp(x1, x2, tk.t), py2 = lerp(y1, y2, tk.t);
+        ctx.moveTo(px2 + 2.2, py2); ctx.arc(px2, py2, 2.2, 0, 7);
+      }
+      ctx.fill();
     }
-
-    /* voice rings when the wave is present */
-    const waveW = (s.a.shape === 1 ? 1 - s.m : 0) + (s.b.shape === 1 ? s.m : 0);
-    if (waveW > 0.1) {
-      for (let i = 0; i < 3; i++) {
-        const rr = R * (1.15 + ((T * 0.5 + i / 3) % 1) * 1.1);
-        const a = (1 - ((T * 0.5 + i / 3) % 1)) * 0.3 * waveW;
-        ctx.strokeStyle = col(a);
+    /* voice rings */
+    const wv = (s.a.sh === 1 ? 1 - s.m : 0) + (s.b.sh === 1 ? s.m : 0);
+    if (wv > .1) {
+      if (!ST && (!rings.length || T - rings[rings.length - 1].t0 > 1.4)) rings.push({ t0: T, a: .34 * wv });
+      for (let i = rings.length - 1; i >= 0; i--) {
+        const rg = rings[i], age = T - rg.t0;
+        if (age > 2.6) { rings.splice(i, 1); continue; }
+        ctx.strokeStyle = col(rg.a * (1 - age / 2.6));
         ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(cx, cy, rr, 0, 7); ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx, cy, R * (1.1 + age * .5), 0, 7); ctx.stroke();
       }
     }
-
-    /* shockwave on chapter change */
-    if (shock) {
-      shock.r += Math.min(W, H) * 0.035;
-      shock.a *= 0.93;
-      if (shock.a < 0.02) shock = null;
-      else {
-        ctx.strokeStyle = col(shock.a);
-        ctx.lineWidth = 2.5;
-        ctx.beginPath(); ctx.arc(cx, cy, shock.r, 0, 7); ctx.stroke();
+    /* satellite tethers */
+    const sw = (s.a.sh === 7 ? 1 - s.m : 0) + (s.b.sh === 7 ? s.m : 0);
+    if (sw > .1) {
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7) * Math.PI * 2 + .4 + ang;
+        const k3 = i === satPush ? 1.16 : 1;
+        ctx.strokeStyle = col((i === satPush ? .4 : .18) * sw);
+        ctx.lineWidth = i === satPush ? 1.6 : 1;
+        ctx.beginPath(); ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(a) * .95 * R * k3, cy + Math.sin(a) * .62 * R * k3);
+        ctx.stroke();
       }
     }
-    if (flash > 0.01) {
-      flash *= 0.9;
-      let fg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.8);
-      fg.addColorStop(0, col(flash * 0.5));
-      fg.addColorStop(1, col(0));
-      ctx.fillStyle = fg;
-      ctx.fillRect(0, 0, W, H);
-    }
-
-    /* captions + chrome */
-    captions.forEach(c => {
-      const fade = 0.04;
-      const o = clamp((p - c.start) / fade, 0, 1) * clamp((c.end - p) / fade, 0, 1);
-      c.el.style.opacity = o;
-      c.el.style.transform = `translateY(${(1 - o) * 30}px) scale(${0.96 + o * 0.04})`;
-    });
-    bar.style.transform = `scaleX(${p})`;
-    if (s.label !== lastLabel) { lastLabel = s.label; mode.textContent = s.label; }
-    mode.style.color = `rgb(${r},${g},${b})`;
-    mode.style.borderColor = `rgba(${r},${g},${b},0.35)`;
-
-    requestAnimationFrame(frame);
   }
-  requestAnimationFrame(frame);
+  ctx.restore();
+
+  /* shock + cuts */
+  if (shock) {
+    shock.r += Math.min(W, H) * .035; shock.a *= .93;
+    if (shock.a < .02) shock = null;
+    else { ctx.strokeStyle = col(shock.a); ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(cx, cy, shock.r, 0, 7); ctx.stroke(); }
+  }
+  if (cut && !ST) {
+    cut.t += dt / 1000;
+    const ct = cut.t;
+    if (ct > .55) cut = null;
+    else if (cut.type === 'shutter') {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = 'rgba(4,5,12,' + (ct < .06 ? 1 : Math.max(0, 1 - (ct - .06) / .3)) + ')';
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = 'lighter';
+    } else if (cut.type === 'leak') {
+      const px2 = cx + (ct / .55 - .5) * W * 1.2 * DIRSIGN;
+      const lg = ctx.createRadialGradient(px2, cy * .7, 0, px2, cy * .7, W * .5);
+      lg.addColorStop(0, 'rgba(255,190,120,' + Math.max(0, .34 - ct * .5) + ')'); lg.addColorStop(1, 'rgba(255,190,120,0)');
+      ctx.fillStyle = lg; ctx.fillRect(0, 0, W, H);
+    } else if (cut.type === 'iris') {
+      ctx.strokeStyle = col(Math.max(0, .5 - ct)); ctx.lineWidth = 30 * (1 - ct / .55);
+      ctx.beginPath(); ctx.arc(cx, cy, Math.max(W, H) * (.1 + ct * 1.1), 0, 7); ctx.stroke();
+    }
+  }
+  if (flash > .01) {
+    flash *= .9;
+    const fg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * .8);
+    fg.addColorStop(0, col(flash * .5)); fg.addColorStop(1, col(0));
+    ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H);
+  }
+
+  /* ---- chrome ---- */
+  captions.forEach(c => {
+    const o = clamp((p - c.start) / .012, 0, 1) * clamp((c.end - p) / .012, 0, 1) * (heroIn ? 1 : 0);
+    c.el.style.opacity = o;
+    c.el.style.transform = 'translateY(' + (1 - o) * 26 + 'px)';
+  });
+  for (let i = 0; i < segs.length; i++) {
+    const f = clamp((p - KEYS[i].p) / SEG + (i === 0 ? 1 : 0), 0, 1);
+    segs[i].style.setProperty('--f', f.toFixed(3));
+  }
+  if (s.i !== lastSeg) {
+    lastSeg = s.i;
+    dots.forEach((d, i) => d.setAttribute('aria-current', String(i === s.i)));
+  }
+  const wantLbl = heroIn ? s.near.k : (secLbl || s.near.k);
+  if (wantLbl !== lastLbl) { lastLbl = wantLbl; mode.textContent = wantLbl; }
+  if (heroIn) {
+    const tt = 'CH ' + (s.i + 1) + '/9 · ' + s.a.k + '→' + s.b.k + ' ' + Math.round(s.m * 100) + '% · ' + active + 'p · T' + tier;
+    if (tt !== lastTel) { lastTel = tt; tel.innerHTML = '<b>' + s.near.k + '</b><br>' + tt; }
+  } else if (lastTel) { lastTel = ''; tel.textContent = ''; }
+  listenChip.classList.toggle('on', heroIn && exhale > .5);
+  skip.classList.toggle('on', heroIn && p < .02 && idle > 5000);
+}
+reg(frame);
+applyMotion();
+
+/* scroll direction for reveals */
+let lastY = scrollY, lastDir = 1;
+addEventListener('scroll', () => {
+  const d = scrollY > lastY ? 1 : -1;
+  if (d !== lastDir) { lastDir = d; document.documentElement.dataset.dir = String(d); }
+  lastY = scrollY;
+}, { passive: true });
+
+/* reveals */
+const revObs = new IntersectionObserver(es => {
+  es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); revObs.unobserve(e.target); } });
+}, { threshold: .12 });
+
+/* ================= ripples + copy ================= */
+document.addEventListener('pointerdown', e => {
+  const t = e.target.closest('[data-ripple]');
+  if (t) {
+    const r = t.getBoundingClientRect();
+    t.style.setProperty('--rx', (e.clientX - r.left) + 'px');
+    t.style.setProperty('--ry', (e.clientY - r.top) + 'px');
+    t.classList.remove('rip'); void t.offsetWidth; t.classList.add('rip');
+  }
+});
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-copy]');
+  if (!c) return;
+  const txt = (c.querySelector('p, span') || c).textContent.trim();
+  const done = () => {
+    const old = c.style.borderColor; c.style.borderColor = 'var(--c)';
+    setTimeout(() => { c.style.borderColor = old; }, 600);
+  };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, done);
+  else {
+    const ta = document.createElement('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (_) {}
+    ta.remove(); done();
+  }
+});
+
+/* ================= 1. pipeline ================= */
+const flow = $('#flow');
+new IntersectionObserver(es => {
+  if (!es[0].isIntersecting) return;
+  flow.style.setProperty('--ink-p', '1');
+  $$('#flow .node').forEach((n, i) => setTimeout(() => n.classList.add('hot'), 120 + i * 110));
+}, { threshold: .1 }).observe(flow);
+
+let engDead = false;
+$('#killEngine').addEventListener('click', () => {
+  engDead = !engDead;
+  const n8 = $('#flow .node[data-n="8"]');
+  n8.classList.toggle('amber', engDead);
+  $('#killEngine').classList.toggle('on', engDead);
+  $('#engMsg').textContent = engDead
+    ? (LANG === 'he' ? 'המנוע הראשי מת → הבא בשרשרת ענה. התשובה עדיין הגיעה.' : 'primary engine down → the next in the chain answered. The answer still landed.')
+    : (LANG === 'he' ? 'מנוע חסום או איטי מתגלגל לבא בתור באמצע התשובה.' : 'rate-limited or slow rolls to the next engine mid-answer.');
+  pulse(engDead ? '#ffc46b' : null, true);
+});
+let netDead = false;
+$('#killNet').addEventListener('click', () => {
+  netDead = !netDead;
+  $('#killNet').classList.toggle('on', netDead);
+  $$('#ladder .tier').forEach(t => {
+    const floor = t.classList.contains('floor');
+    t.classList.toggle('off', netDead && !floor);
+    t.classList.toggle('lit', netDead && floor);
+  });
+  pulse(netDead ? '#4fd8ff' : null, false);
+});
+
+/* ================= 2. speakers ================= */
+function printBars(k) {
+  const r = rnd(k.charCodeAt(0) * 7919 + 13);
+  let h = '';
+  for (let i = 0; i < 32; i++) h += '<i style="--h:' + (12 + Math.round(r() * 82)) + '"></i>';
+  return h;
+}
+$$('[data-print]').forEach(p => { p.innerHTML = printBars(p.dataset.print); });
+$$('#spk .spkc').forEach(c => c.addEventListener('click', () => {
+  $$('#spk .spkc').forEach(x => x.classList.remove('sel'));
+  c.classList.add('sel');
+  pulse(getComputedStyle(c).getPropertyValue('--sc').trim(), false);
+}));
+
+let gGender = 'm';
+function renderGram() {
+  const he = { m: 'מה שלומך? הכנתי לך את הדוח, תרצה שאשלח?', f: 'מה שלומך? הכנתי לך את הדוח, תרצי שאשלח?' };
+  const en = { m: 'How are you? I put the report together — want me to send it?', f: 'How are you? I put the report together — want me to send it?' };
+  const el = $('#gramSay');
+  el.textContent = LANG === 'he' ? he[gGender] : he[gGender];
+  el.setAttribute('dir', 'rtl');
+  const note = $('#gramSay').nextElementSibling;
+  if (LANG === 'en' && note) note.textContent = 'Same sentence, correct conjugation — shown in Hebrew because that is where the distinction exists. English has no gendered "you".';
+}
+$('#gm').addEventListener('click', () => { gGender = 'm'; $('#gm').classList.add('on'); $('#gf').classList.remove('on'); renderGram(); });
+$('#gf').addEventListener('click', () => { gGender = 'f'; $('#gf').classList.add('on'); $('#gm').classList.remove('on'); renderGram(); });
+
+/* ================= 3. house ================= */
+const rooms = $$('#plan .room');
+let roomSel = -1, nightT = null;
+function lightAll(on) {
+  rooms.forEach(r => { r.classList.toggle('lit', on); r.classList.remove('dark'); });
+  roomSel = -1;
+}
+new IntersectionObserver(es => {
+  if (es[0].isIntersecting && roomSel === -1) rooms.forEach((r, i) => setTimeout(() => r.classList.add('lit'), 160 + i * 120));
+}, { threshold: .25 }).observe($('#plan'));
+rooms.forEach((r, i) => r.addEventListener('click', () => {
+  if (roomSel === i) { lightAll(true); return; }
+  roomSel = i;
+  rooms.forEach((x, j) => { x.classList.toggle('lit', j === i); x.classList.toggle('dark', j !== i); });
+  const fams = $$('#fam span');
+  fams.forEach((f, j) => f.classList.toggle('hi', (j + i) % 3 === 0));
+  pulse('#4fe3b0', false);
+}));
+$('#goodnight').addEventListener('click', () => {
+  clearTimeout(nightT);
+  roomSel = -1;
+  const order = [0, 1, 2, 3, 4, 5];
+  order.forEach((idx, n) => setTimeout(() => { rooms[idx].classList.remove('lit', 'dark'); }, n * 120));
+  $$('#fam span').forEach(f => f.classList.remove('hi'));
+  nightT = setTimeout(() => pulse('#2b3f7a', true), 620);
+});
+$('#allon').addEventListener('click', () => { lightAll(true); pulse('#ffd79a', false); });
+
+let acT = 22, acMode = 'cool', acFan = 3;
+function acSay() {
+  const modesEn = { cool: 'cooling', heat: 'heating', dry: 'dry', fan: 'fan only' };
+  const modesHe = { cool: 'קירור', heat: 'חימום', dry: 'ייבוש', fan: 'אוורור' };
+  const fansEn = ['', 'low', 'medium', 'high', 'turbo'], fansHe = ['', 'נמוך', 'בינוני', 'גבוה', 'טורבו'];
+  const el = $('#acSayTxt'); if (!el) return;
+  el.textContent = LANG === 'he'
+    ? '״מזגן ' + modesHe[acMode] + ' ' + acT + ' מאוורר ' + fansHe[acFan] + '״'
+    : '“AC, ' + modesEn[acMode] + ', ' + acT + ', ' + fansEn[acFan] + ' fan”';
+  el.setAttribute('dir', LANG === 'he' ? 'rtl' : 'ltr');
+  $('#acTemp').innerHTML = acT + '<small>°</small>';
+}
+$('#acUp').addEventListener('click', () => { acT = Math.min(30, acT + 1); acSay(); });
+$('#acDown').addEventListener('click', () => { acT = Math.max(16, acT - 1); acSay(); });
+$$('.mode-b').forEach(b => b.addEventListener('click', () => {
+  acMode = b.dataset.m; $$('.mode-b').forEach(x => x.classList.toggle('on', x === b)); acSay();
+}));
+$$('.fan-b').forEach(b => b.addEventListener('click', () => {
+  acFan = +b.dataset.f; $$('.fan-b').forEach(x => x.classList.toggle('on', x === b)); acSay();
+}));
+acSay();
+
+/* ================= 4. panels ================= */
+const CHAT_COLS = ['#4fd8ff', '#ffc46b', '#c9a0ff', '#4fe3b0', '#ff86ae', '#8fb4ff', '#ffb4d8', '#cfe0ff', '#9db4ff', '#a98bff', '#ffd79a', '#7fe3d0'];
+$('#swatch').innerHTML = CHAT_COLS.map(c => '<i style="background:' + c + '"></i>').join('');
+function rowsHtml(kind, n) {
+  let h = '';
+  for (let i = 0; i < n; i++) {
+    const c = CHAT_COLS[i % CHAT_COLS.length];
+    const t = kind === 'chat'
+      ? (LANG === 'he' ? 'שיחה · דוגמה' : 'Conversation · placeholder')
+      : (LANG === 'he' ? 'נושא הודעה · דוגמה' : 'Message subject · placeholder');
+    const s = kind === 'chat'
+      ? (LANG === 'he' ? 'הודעה · לפני ' + (i + 2) + ' דק׳' : 'Message · ' + (i + 2) + ' min ago')
+      : (LANG === 'he' ? 'שולח · לפני ' + (i + 2) + ' דק׳' : 'Sender · ' + (i + 2) + ' min ago');
+    h += '<div class="prow" style="--d:' + (i * 45) + 'ms"><span class="av" style="background:' + c + '">' +
+      String.fromCharCode(65 + i) + '</span><span><span class="t">' + t + '</span><span class="s">' + s + '</span></span>' +
+      '<span class="m">' + (kind === 'chat' ? (i % 3 ? '🖼' : '🎵') : '📎') + '</span></div>';
+  }
+  return h;
+}
+function renderRows() {
+  $('#chatRows').innerHTML = rowsHtml('chat', 6);
+  $('#mailRows').innerHTML = rowsHtml('mail', 5);
+}
+renderRows();
+$$('#tabs button').forEach(b => b.addEventListener('click', () => {
+  $$('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === b.dataset.p));
+  if (b.dataset.p !== 'media') renderRows();
+  specOn = b.dataset.p === 'media';
+}));
+/* spectrum: 12Hz, only while visible */
+const spec = $('#spec'), disc = $('#disc');
+spec.innerHTML = Array.from({ length: 24 }, () => '<i></i>').join('');
+const sBars = $$('#spec i');
+let specOn = false, specVis = false, sAcc = 0, sPh = 0;
+function specTick(t, dt) {
+  if (!(specOn && specVis) || still()) return;
+  sAcc += dt; if (sAcc < 83) return; sAcc = 0; sPh += .35;
+  let sum = 0;
+  for (let i = 0; i < 24; i++) {
+    const v = 14 + (Math.sin(sPh + i * .55) * .5 + .5) * (55 + 30 * Math.sin(sPh * .3 + i));
+    const h = clamp(v, 8, 100); sum += h;
+    sBars[i].style.height = h.toFixed(0) + '%';
+  }
+  disc.style.transform = 'scale(' + (1 + (sum / 2400) * .12).toFixed(3) + ')';
+}
+reg(specTick);
+new IntersectionObserver(es => { specVis = es[0].isIntersecting; }, { threshold: .1 }).observe($('#deck'));
+
+/* pop-out drag + resize */
+const pop = $('#pop');
+let pdrag = null;
+$('#popBtn').addEventListener('click', () => {
+  pop.classList.toggle('hid');
+  $('#popBtn').classList.toggle('on', !pop.classList.contains('hid'));
+});
+$('#popDock').addEventListener('click', () => {
+  pop.classList.add('hid'); $('#popBtn').classList.remove('on');
+  pop.style.transform = ''; pop.style.width = '';
+});
+function dragStart(e, mode) {
+  const r = pop.getBoundingClientRect();
+  pdrag = { mode, sx: e.clientX, sy: e.clientY, ox: pop._x || 0, oy: pop._y || 0, w: r.width };
+  pop.setPointerCapture ? pop.setPointerCapture(e.pointerId) : 0;
+  e.preventDefault();
+}
+$('#popBar').addEventListener('pointerdown', e => { if (!e.target.closest('button')) dragStart(e, 'move'); });
+$('#popRz').addEventListener('pointerdown', e => dragStart(e, 'size'));
+addEventListener('pointermove', e => {
+  if (!pdrag) return;
+  const dx = e.clientX - pdrag.sx, dy = e.clientY - pdrag.sy;
+  if (pdrag.mode === 'move') {
+    const box = $('#deck').getBoundingClientRect(), pr = pop.getBoundingClientRect();
+    pop._x = clamp(pdrag.ox + dx, -pr.left + box.left + 4, box.right - pr.width - pr.left + pdrag.ox - 4 + pr.width - pr.width);
+    pop._x = clamp(pdrag.ox + dx, -(pr.left - box.left) + pdrag.ox - pdrag.ox, box.width - pr.width);
+    pop._y = clamp(pdrag.oy + dy, -34, box.height - 70);
+    pop.style.transform = 'translate(' + pop._x + 'px,' + pop._y + 'px)';
+  } else {
+    pop.style.width = clamp(pdrag.w + dx * DIRSIGN, 170, $('#deck').clientWidth - 24) + 'px';
+  }
+});
+addEventListener('pointerup', () => { pdrag = null; });
+
+/* ================= 5. money gate ================= */
+const hold = $('#hold'), dashBody = $('#dashBody'), lockedMsg = $('#lockedMsg');
+$('#mbars').innerHTML = Array.from({ length: 7 }, () => '<i></i>').join('');
+const mbars = $$('#mbars i');
+let holding = false, hp = 0, unlocked = false, relockT = null, cntJob = null;
+function holdTick(t, dt) {
+  if (!holding) { if (hp > 0) { hp = Math.max(0, hp - dt / 300); hold.style.setProperty('--p', hp); } return; }
+  hp = Math.min(1, hp + dt / 900);
+  hold.style.setProperty('--p', hp);
+  if (hp >= 1) { holding = false; approve(); }
+}
+reg(holdTick);
+hold.addEventListener('pointerdown', e => { if (unlocked) return; holding = true; e.preventDefault(); });
+addEventListener('pointerup', () => {
+  if (!holding) return;
+  holding = false;
+  if (hp < 1 && hp > .05) { hold.classList.add('shake'); setTimeout(() => hold.classList.remove('shake'), 320); }
+});
+function countUp() {
+  let e0 = 0;
+  const vals = $$('#dashBody .val');
+  const job = (t, dt) => {
+    e0 += dt;
+    const k = clamp(e0 / 1100, 0, 1), ke = smooth(k);
+    vals.forEach(v => {
+      const tgt = +v.dataset.v, suf = v.dataset.suf || '';
+      v.textContent = (tgt < 0 ? '−' : '') + Math.round(Math.abs(tgt) * ke).toLocaleString('en-US') + suf;
+    });
+    mbars.forEach((b, i) => { b.style.height = (12 + ((i * 37) % 60) * ke) + '%'; });
+    if (k >= 1) { unreg(job); cntJob = null; }
+  };
+  cntJob = job; reg(job);
+}
+function approve() {
+  unlocked = true;
+  hold.style.setProperty('--p', 1);
+  $('#holdTxt').textContent = LANG === 'he' ? 'אושר ✓' : 'APPROVED ✓';
+  lockedMsg.classList.add('hide');
+  dashBody.classList.remove('hide');
+  $$('#dashBody .val').forEach(v => v.classList.remove('sealed'));
+  countUp();
+  pulse('#ffc46b', true);
+  clearTimeout(relockT);
+  relockT = setTimeout(relock, 45000);
+}
+function relock() {
+  unlocked = false; hp = 0;
+  hold.style.setProperty('--p', 0);
+  $('#holdTxt').textContent = LANG === 'he' ? 'החזק לאישור' : 'HOLD TO APPROVE';
+  dashBody.classList.add('hide');
+  lockedMsg.classList.remove('hide');
+  lockedMsg.textContent = LANG === 'he' ? 'נחתם מחדש. שום דבר לא מוצג עד שתאשר.' : 'Re-sealed. Nothing is shown until you approve.';
+  $$('#dashBody .val').forEach(v => { v.classList.add('sealed'); v.textContent = '— — —'; });
+  if (cntJob) { unreg(cntJob); cntJob = null; }
+}
+$$('#dashBody .val').forEach(v => v.classList.add('sealed'));
+$('#denyBtn').addEventListener('click', () => {
+  clearTimeout(relockT); relock();
+  lockedMsg.textContent = LANG === 'he' ? 'נדחה — שום דבר לא הוצג. אפשר לנסות שוב.' : 'Declined — nothing was shown. You can try again.';
+});
+
+/* ================= 6. team ================= */
+const AGENTS = [
+  { en: 'RESEARCH', he: 'מחקר', ren: 'Digs through sources and comes back with a grounded answer.', rhe: 'חופר במקורות וחוזר עם תשובה מבוססת.', ten: 'A question that needs looking things up.', the: 'שאלה שדורשת לחפש.', aen: 'Search, read, summarize, cite.', ahe: 'לחפש, לקרוא, לסכם, לצטט.', qen: 'Nothing outbound.', qhe: 'שום דבר שיוצא החוצה.' },
+  { en: 'TRAVEL', he: 'נסיעות', ren: 'Compares real flights and hotels from the pages themselves.', rhe: 'משווה טיסות ומלונות אמיתיים מהדפים עצמם.', ten: 'A trip, a date range, a destination.', the: 'נסיעה, טווח תאריכים, יעד.', aen: 'Compare, shortlist, build an itinerary.', ahe: 'להשוות, לסנן, לבנות מסלול.', qen: 'Any booking or payment.', qhe: 'כל הזמנה או תשלום.' },
+  { en: 'FINANCE', he: 'כספים', ren: 'Reads statements and payslips, builds the monthly picture.', rhe: 'קורא דוחות ותלושים, בונה את התמונה החודשית.', ten: 'A new payslip, a card cycle, a question about money.', the: 'תלוש חדש, מחזור אשראי, שאלה על כסף.', aen: 'Parse, compare, prepare the report.', ahe: 'לפענח, להשוות, להכין את הדוח.', qen: 'Showing any figure on screen.', qhe: 'להציג סכום על המסך.' },
+  { en: 'STUDIO', he: 'אולפן', ren: 'Makes the video, the reel and the narrated cut, in her own voice.', rhe: 'מפיק את הווידאו, הריל והקריינות, בקול שלה.', ten: 'A batch of photos, a trip, an occasion.', the: 'אוסף תמונות, נסיעה, אירוע.', aen: 'Edit, score, render, show you the cut.', ahe: 'לערוך, להלחין, לרנדר, להראות לך.', qen: 'Publishing anywhere.', qhe: 'לפרסם בכל מקום.' },
+  { en: 'SECRETARY', he: 'מזכירות', ren: 'Triages mail and the calendar, drafts the reply in your voice.', rhe: 'ממיין מייל ויומן, מנסח את התשובה בסגנון שלך.', ten: 'Incoming mail, a new event, a 90-second sweep.', the: 'מייל נכנס, אירוע חדש, סריקה כל 90 שניות.', aen: 'Label, file, draft, log.', ahe: 'לתייג, לסדר, לנסח, לרשום.', qen: 'Sending, deleting, accepting on your behalf.', qhe: 'לשלוח, למחוק, לאשר בשמך.' },
+  { en: 'ENGINEERING', he: 'הנדסה', ren: 'Writes her new skills — the code is compile-checked before it lands.', rhe: 'כותב לה יכולות חדשות — הקוד נבדק בקומפילציה לפני שנכנס.', ten: 'A capability she does not have yet.', the: 'יכולת שעוד אין לה.', aen: 'Write, compile-check, register the skill.', ahe: 'לכתוב, לבדוק קומפילציה, לרשום את המיומנות.', qen: 'Shipping without the reviewer.', qhe: 'לעלות לאוויר בלי הסוקר.' },
+  { en: 'REVIEWER', he: 'סוקר', ren: 'Audits every new skill automatically before it goes live.', rhe: 'מבקר כל מיומנות חדשה אוטומטית לפני שהיא עולה.', ten: 'Any new or changed capability.', the: 'כל יכולת חדשה או שהשתנתה.', aen: 'Audit, flag, block a bad landing.', ahe: 'לבקר, לסמן, לחסום כניסה בעייתית.', qen: 'Nothing — it is the gate.', qhe: 'כלום — הוא השער.' },
+];
+let agSel = -1;
+function renderAgents() {
+  const box = $('#agents');
+  box.innerHTML = AGENTS.map((a, i) =>
+    '<button class="ag' + (agSel === i ? ' on' : '') + '" data-i="' + i + '"><b>' + (LANG === 'he' ? a.he : a.en) + '</b>' +
+    '<div class="r">' + (LANG === 'he' ? a.rhe : a.ren) + '</div></button>').join('');
+  $$('#agents .ag').forEach(b => b.addEventListener('click', () => {
+    const i = +b.dataset.i;
+    agSel = agSel === i ? -1 : i;
+    renderAgents();
+    const d = $('#agd');
+    if (agSel < 0) { d.classList.add('hide'); return; }
+    const a = AGENTS[agSel];
+    d.classList.remove('hide');
+    $('#agdT').textContent = LANG === 'he' ? a.the : a.ten;
+    $('#agdA').textContent = LANG === 'he' ? a.ahe : a.aen;
+    $('#agdQ').textContent = LANG === 'he' ? a.qhe : a.qen;
+    pulse('#c9a0ff', false);
+  }));
+}
+renderAgents();
+
+const PROV = ['P1', 'P2', 'P3', 'P4', 'P5'];
+let beam = 0, stallSet = new Set(), stJob = null, stStep = -1;
+function renderRibbon() {
+  $('#ribbon').innerHTML = PROV.map((p, i) =>
+    '<div class="col' + (stallSet.has(i) ? ' dead' : '') + '" data-i="' + i + '" style="--l:' + (i === beam ? 100 : 12) + '%"><b>' + p + '</b></div>').join('');
+  const states = LANG === 'he'
+    ? ['מקשיבה…', 'נותב לספק ' + PROV[beam], 'הספק נתקע — תקרה של 60 שניות', 'ניתוב מחדש באמצע התשובה', 'הגיבוי נושא את התשובה', 'התאוששות — הראשי חזר לתור']
+    : ['listening…', 'routed to provider ' + PROV[beam], 'provider stalled — 60s cap', 're-routed mid-answer', 'carried by the fallback', 'recovered, primary re-armed'];
+  $('#ticker').innerHTML = states.map((s, i) =>
+    (i === stStep ? '<span>▸ ' + s + '</span>' : '<b>' + (i <= stStep ? '· ' : '') + '</b>')).join('') ||
+    '';
+  if (stStep < 0) $('#ticker').innerHTML = LANG === 'he' ? '<b>קרן אחת עוברת בין חמישה ספקים. אף פעם לא נשברת.</b>' : '<b>One beam threading five providers. It never breaks.</b>';
+}
+renderRibbon();
+$('#stallBtn').addEventListener('click', () => {
+  if (stJob) return;
+  let e0 = 0; stStep = 0;
+  const seq = [0, 700, 1500, 2300, 3100, 4100];
+  stJob = (t, dt) => {
+    e0 += dt;
+    let st = 0; for (let i = 0; i < seq.length; i++) if (e0 >= seq[i]) st = i;
+    if (st !== stStep) {
+      stStep = st;
+      if (st === 2) { stallSet.add(beam); pulse('#ffc46b', true); }
+      if (st === 3) { beam = (beam + 1) % PROV.length; while (stallSet.has(beam)) beam = (beam + 1) % PROV.length; }
+      if (st === 5) { stallSet.clear(); }
+      renderRibbon();
+    }
+    if (e0 > 5200) { unreg(stJob); stJob = null; stStep = -1; renderRibbon(); }
+  };
+  reg(stJob);
+});
+
+/* ================= 7. registry ================= */
+const CATS = [
+  { k: 'voice', en: 'VOICE', he: 'קול', c: '#4fd8ff' },
+  { k: 'mind', en: 'MIND', he: 'מוח', c: '#a98bff' },
+  { k: 'identity', en: 'IDENTITY', he: 'זהות', c: '#ffb4d8' },
+  { k: 'finance', en: 'FINANCE', he: 'כספים', c: '#ffc46b' },
+  { k: 'home', en: 'HOME', he: 'בית', c: '#4fe3b0' },
+  { k: 'interfaces', en: 'INTERFACES', he: 'ממשקים', c: '#cfe0ff' },
+  { k: 'autonomy', en: 'AUTONOMY', he: 'אוטונומיה', c: '#c9a0ff' },
+];
+const catOf = k => CATS.find(c => c.k === k) || CATS[0];
+let catSel = new Set(), query = '', matrixOn = false;
+function matches(c) {
+  if (catSel.size && !catSel.has(c.c)) return false;
+  if (!query) return true;
+  const q = query.toLowerCase();
+  return (c.te + ' ' + c.th + ' ' + c.de + ' ' + c.dh + ' ' + c.c).toLowerCase().includes(q);
+}
+function renderCaps() {
+  const he = LANG === 'he';
+  $('#chips').innerHTML = CATS.map(c =>
+    '<button class="chip' + (catSel.has(c.k) ? ' on' : '') + '" data-k="' + c.k + '" style="--cc:' + c.c + '">' +
+    (he ? c.he : c.en) + '<u>' + CAPS.filter(x => x.c === c.k).length + '</u></button>').join('');
+  $$('#chips .chip').forEach(b => b.addEventListener('click', () => {
+    const k = b.dataset.k;
+    catSel.has(k) ? catSel.delete(k) : catSel.add(k);
+    renderCaps();
+    pulse(catOf(k).c, false);
+  }));
+  const shown = CAPS.filter(matches);
+  $('#grid56').innerHTML = CAPS.map((c, i) => {
+    const cat = catOf(c.c);
+    return '<div class="cap' + (matches(c) ? ' in' : ' gone') + '" data-i="' + i + '" style="--cc:' + cat.c + '">' +
+      '<span class="scan"></span><div class="hd"><span class="ct">' + (he ? c.th : c.te) + '</span>' +
+      '<span class="cc">' + (he ? cat.he : cat.en) + '</span></div>' +
+      '<div class="dt"><div><p>' + (he ? c.dh : c.de) + '</p></div></div></div>';
+  }).join('');
+  $$('#grid56 .cap').forEach(el => el.addEventListener('click', () => el.classList.toggle('open')));
+  const hidden = CAPS.length - shown.length;
+  $('#residue').innerHTML = CAPS.filter(c => !matches(c)).map(c => '<i style="--rc:' + catOf(c.c).c + '"></i>').join('');
+  $('#count').textContent = he
+    ? 'מוצגות ' + shown.length + ' מתוך ' + CAPS.length + (hidden ? ' · ' + hidden + ' מכונסות לנקודות' : '')
+    : 'showing ' + shown.length + ' of ' + CAPS.length + (hidden ? ' · ' + hidden + ' collapsed to dots' : '');
+  const max = Math.max(...CATS.map(c => CAPS.filter(x => x.c === c.k && matches(x)).length), 1);
+  $('#matrix').innerHTML = '<tr><th>' + (he ? 'קטגוריה' : 'CATEGORY') + '</th><th>' + (he ? 'מוצגות' : 'SHOWN') + '</th><th></th></tr>' +
+    CATS.map(c => {
+      const n = CAPS.filter(x => x.c === c.k && matches(x)).length;
+      return '<tr><td>' + (he ? c.he : c.en) + '</td><td class="n">' + n + '</td>' +
+        '<td><div class="bar" style="--cc:' + c.c + ';width:' + (n / max * 100) + '%"></div></td></tr>';
+    }).join('');
+  $('#matrix').classList.toggle('hide', !matrixOn);
+  $('#grid56').classList.toggle('hide', matrixOn);
+  $('#residue').classList.toggle('hide', matrixOn);
+}
+$('#q').addEventListener('input', e => { query = e.target.value; renderCaps(); });
+$('#matrixBtn').addEventListener('click', () => {
+  matrixOn = !matrixOn;
+  $('#matrixBtn').classList.toggle('on', matrixOn);
+  renderCaps();
+});
+
+/* stats ledger */
+const LED = [
+  ['18', 'intents understood and routed', 'כוונות מזוהות ומנותבות', 'o'],
+  ['18', 'AI engines benchmarked in the chain', 'מנועי AI שנמדדו בשרשרת', 'o'],
+  ['4', 'speech-recognition engines behind the mic', 'מנועי זיהוי דיבור מאחורי המיקרופון', 'o'],
+  ['11', 'languages recognized by ear', 'שפות מזוהות לפי אוזן', 'o'],
+  ['3', 'voice tiers, the last one offline', 'שכבות קול, האחרונה אופליין', 'o'],
+  ['~1.5s', 'from your last word to her first', 'מהמילה האחרונה שלך לראשונה שלה', 'o'],
+  ['~1s', 'from spoken request to action', 'מבקשה מדוברת לפעולה', 'o'],
+  ['0.3–0.9s', 'intent recognition, warm', 'זיהוי כוונה, חם', 'o'],
+  ['512', 'dimensions in every voiceprint', 'מידות בכל טביעת קול', 'o'],
+  ['14', 'guided enrollment phrases', 'משפטי רישום מונחים', 'o'],
+  ['44.1 kHz', 'capture rate, enrollment and live alike', 'קצב דגימה, ברישום ובשידור חי', 'o'],
+  ['20/20', 'correct IDs in leave-one-out validation', 'זיהויים נכונים בבדיקת leave-one-out', 'o'],
+  ['9', 'finance skills', 'מיומנויות פיננסיות', 'o'],
+  ['0', 'figures spoken aloud or printed in chat', 'סכומים שנאמרים בקול או נכתבים בצ׳אט', 'o'],
+  ['2', 'approval routes in parallel', 'מסלולי אישור במקביל', 'o'],
+  ['~2s', 'approval check cadence, up to a 5-minute window', 'קצב בדיקת אישור, בחלון של עד 5 דקות', 'o'],
+  ['6h', 'mail sweep interval while a payslip is due', 'מרווח סריקת מייל כשתלוש אמור להגיע', 'o'],
+  ['3000+', 'integrations reachable through Home Assistant', 'אינטגרציות נגישות דרך Home Assistant', 'o'],
+  ['356', 'AC models in the onboarding database', 'דגמי מזגן במסד החיבור', 'o'],
+  ['129', 'AC brands, Israeli makers included', 'מותגי מזגנים, כולל יצרנים ישראליים', 'o'],
+  ['9', 'device families on one screen', 'משפחות מכשירים על מסך אחד', 'o'],
+  ['60s', 'live refresh across the whole hub', 'רענון חי בכל המסך', 'o'],
+  ['~0.7s', 'warm panel re-open', 'פתיחה חוזרת של פאנל במצב חם', 'o'],
+  ['3', 'panes in the mail layout', 'חלוניות בפריסת המייל', 'o'],
+  ['24', 'live spectrum bars', 'עמודות ספקטרום חיות', 'o'],
+  ['12', 'distinct speaker colours per group', 'צבעי דוברים נפרדים בקבוצה', 'o'],
+  ['7', 'autonomous agents on her team', 'סוכנים אוטונומיים בצוות שלה', 'o'],
+  ['5', 'model providers in the failover chain', 'ספקי מודלים בשרשרת הגיבוי', 'o'],
+  ['60s', 'stall cap per call', 'תקרת תקיעה לכל קריאה', 'o'],
+  ['90s', 'proactive check cycle', 'מחזור בדיקה פרואקטיבי', 'o'],
+  ['16', 'tool rounds an agent can run on its own', 'סבבי כלים שסוכן מריץ לבד', 'o'],
+  ['~7s', 'spoken request to finished agent result', 'מבקשה מדוברת לתוצאת סוכן מוגמרת', 'o'],
+];
+function renderLedger() {
+  const he = LANG === 'he';
+  const derived = [
+    [String(CAPS.length), 'capabilities listed on this page', 'יכולות שמופיעות בדף הזה'],
+    [String(CATS.length), 'categories in the registry', 'קטגוריות במפתח'],
+    [String(KEYS.length), 'chapters in the opening sequence', 'פרקים ברצף הפתיחה'],
+    [String(SHAPES.length), 'particle shapes the field morphs through', 'צורות חלקיקים שהשדה עובר ביניהן'],
+  ];
+  $('#ledger').innerHTML =
+    derived.map(r => '<tr><td class="v">' + r[0] + '</td><td class="l">' + (he ? r[2] : r[1]) + '</td><td class="b"><span class="badge d">DERIVED</span></td></tr>').join('') +
+    LED.map(r => '<tr><td class="v">' + r[0] + '</td><td class="l">' + (he ? r[2] : r[1]) + '</td><td class="b"><span class="badge o">OWNER-VERIFIED</span></td></tr>').join('');
+}
+renderLedger();
+renderCaps();
+
+/* observe reveals last, after all dynamic content exists */
+$$('.rev').forEach(el => revObs.observe(el));
+setLang('en', false);
+
 </script>
 </body>
 </html>
