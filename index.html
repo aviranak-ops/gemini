@@ -4,15 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0b0b0f">
-<title>Motion — אתר מובייל עם תנועת תמונות</title>
+<title>מסע של יום אחד — הירו נגלל על כל העמוד</title>
 <style>
   :root {
-    --bg: #0b0b0f;
-    --surface: #15151c;
-    --text: #f2f2f5;
-    --muted: #9a9aa5;
-    --accent: #ff5c39;
-    --radius: 22px;
+    --text: #f5f4f7;
+    --muted: rgba(245, 244, 247, .72);
+    --accent: #ffb35c;
+    --chip: rgba(8, 10, 20, .5);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -20,537 +18,424 @@
   html { scroll-behavior: smooth; }
 
   body {
-    background: var(--bg);
+    background: #04070f;
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Heebo", "Assistant", Arial, sans-serif;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
   }
 
-  img { display: block; max-width: 100%; }
-
-  /* ---------- Header ---------- */
+  /* ---------- Fixed chrome ---------- */
+  .progress {
+    position: fixed;
+    top: 0;
+    inset-inline: 0;
+    height: 3px;
+    z-index: 60;
+    background: rgba(255,255,255,.12);
+  }
+  .progress i {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    transform-origin: right;
+    transform: scaleX(0);
+  }
   header {
     position: fixed;
     inset-inline: 0;
-    top: 0;
+    top: 3px;
     z-index: 50;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 14px 20px;
     padding-top: calc(14px + env(safe-area-inset-top));
-    transition: background .4s, backdrop-filter .4s;
+    pointer-events: none;
   }
-  header.scrolled {
-    background: rgba(11, 11, 15, .72);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-  }
-  .logo {
-    font-weight: 800;
-    font-size: 1.15rem;
-    letter-spacing: .02em;
-  }
+  .logo { font-weight: 800; font-size: 1.1rem; text-shadow: 0 1px 12px rgba(0,0,0,.5); }
   .logo span { color: var(--accent); }
-  .menu-btn {
-    background: rgba(255,255,255,.08);
-    border: 1px solid rgba(255,255,255,.14);
-    color: var(--text);
+  .clock {
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    background: var(--chip);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border-radius: 999px;
-    padding: 8px 16px;
-    font-size: .85rem;
-    font-family: inherit;
+    padding: 6px 14px;
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
   }
 
-  /* ---------- Hero: Ken Burns ---------- */
-  .hero {
-    position: relative;
+  /* ---------- The journey: sticky full-screen hero ---------- */
+  .journey { height: 560svh; position: relative; }
+  .stage {
+    position: sticky;
+    top: 0;
     height: 100svh;
-    display: grid;
-    place-items: end start;
     overflow: hidden;
-    isolation: isolate;
   }
-  .hero-img {
+  .sky, .layer, .stars, .haze { position: absolute; inset: 0; }
+  .stars {
+    opacity: 0;
+    will-change: opacity;
+  }
+  .orb {
     position: absolute;
-    inset: -6%;
-    z-index: -2;
-    background-size: cover;
-    background-position: center;
-    animation: kenburns 16s ease-in-out infinite alternate;
+    border-radius: 50%;
+    transform: translate(50%, -50%);
   }
-  @keyframes kenburns {
-    from { transform: scale(1) translate(0, 0); }
-    to   { transform: scale(1.15) translate(2%, -2%); }
-  }
-  .hero::after {
+  .sun  { width: 16vmin; height: 16vmin; }
+  .sun::after {
     content: "";
     position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: linear-gradient(to top, rgba(11,11,15,.92) 0%, rgba(11,11,15,.25) 45%, rgba(11,11,15,.35) 100%);
+    inset: -110%;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--sc, #ffd9a0) 0%, transparent 62%);
+    opacity: .5;
   }
-  .hero-content {
-    padding: 0 24px calc(56px + env(safe-area-inset-bottom));
-    max-width: 560px;
-  }
-  .hero .kicker {
-    display: inline-block;
-    color: var(--accent);
-    font-weight: 700;
-    font-size: .8rem;
-    letter-spacing: .18em;
-    margin-bottom: 14px;
-    animation: rise .9s .2s cubic-bezier(.2,.7,.2,1) both;
-  }
-  .hero h1 {
-    font-size: clamp(2.2rem, 9vw, 3.4rem);
-    line-height: 1.12;
-    font-weight: 800;
-    animation: rise .9s .35s cubic-bezier(.2,.7,.2,1) both;
-  }
-  .hero p {
-    margin-top: 14px;
-    color: var(--muted);
-    font-size: 1rem;
-    line-height: 1.65;
-    animation: rise .9s .5s cubic-bezier(.2,.7,.2,1) both;
-  }
-  .hero .cta {
-    display: inline-block;
-    margin-top: 24px;
-    background: var(--accent);
-    color: #fff;
-    text-decoration: none;
-    font-weight: 700;
-    padding: 14px 30px;
-    border-radius: 999px;
-    animation: rise .9s .65s cubic-bezier(.2,.7,.2,1) both;
-    transition: transform .25s;
-  }
-  .hero .cta:active { transform: scale(.95); }
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(28px); }
-    to   { opacity: 1; transform: none; }
-  }
-  .scroll-hint {
+  .moon { width: 8vmin;  height: 8vmin; opacity: 0; box-shadow: 0 0 60px 14px rgba(220, 228, 255, .35); }
+  .moon::after {
+    content: "";
     position: absolute;
-    bottom: calc(14px + env(safe-area-inset-bottom));
+    width: 62%;
+    height: 62%;
+    border-radius: 50%;
+    top: 12%;
+    inset-inline-start: 8%;
+    background: rgba(0, 0, 30, .18);
+  }
+  .layer {
+    -webkit-mask-repeat: repeat-x;
+    mask-repeat: repeat-x;
+    -webkit-mask-size: auto 100%;
+    mask-size: auto 100%;
+    will-change: -webkit-mask-position, mask-position, background-color;
+  }
+
+  /* ---------- Captions that live over the hero ---------- */
+  .caption {
+    position: absolute;
     inset-inline: 0;
+    bottom: 16svh;
     display: grid;
     place-items: center;
+    padding: 0 24px;
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity, transform;
+  }
+  .caption .chip {
+    background: var(--chip);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 20px;
+    padding: 22px 26px;
+    max-width: 480px;
+    text-align: center;
+  }
+  .caption .when {
+    color: var(--accent);
+    font-weight: 800;
+    font-size: .78rem;
+    letter-spacing: .2em;
+  }
+  .caption h2 {
+    font-size: clamp(1.5rem, 6.5vw, 2.1rem);
+    font-weight: 800;
+    margin-top: 8px;
+    text-wrap: balance;
+  }
+  .caption p {
     color: var(--muted);
-    font-size: 1.2rem;
+    line-height: 1.65;
+    margin-top: 10px;
+    font-size: .95rem;
+  }
+
+  /* Opening title — bigger, no chip */
+  .caption.opener { bottom: auto; top: 0; height: 100svh; place-items: center; }
+  .caption.opener .inner { text-align: center; max-width: 560px; }
+  .caption.opener .when { font-size: .85rem; }
+  .caption.opener h1 {
+    font-size: clamp(2.6rem, 12vw, 4.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-top: 12px;
+    text-shadow: 0 2px 30px rgba(0,0,0,.45);
+    text-wrap: balance;
+  }
+  .caption.opener p {
+    color: var(--muted);
+    margin-top: 14px;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    text-shadow: 0 1px 14px rgba(0,0,0,.5);
+  }
+  .caption.opener .hint {
+    margin-top: 34px;
+    font-size: .8rem;
+    letter-spacing: .14em;
+    color: var(--muted);
     animation: bob 1.8s ease-in-out infinite;
   }
   @keyframes bob {
-    0%, 100% { transform: translateY(0); opacity: .5; }
-    50% { transform: translateY(8px); opacity: 1; }
+    0%, 100% { transform: translateY(0); opacity: .55; }
+    50% { transform: translateY(9px); opacity: 1; }
   }
 
-  /* ---------- Sections ---------- */
-  section { padding: 72px 20px; }
-  .section-head { margin-bottom: 32px; }
-  .section-head .kicker {
-    color: var(--accent);
-    font-weight: 700;
-    font-size: .78rem;
-    letter-spacing: .18em;
-  }
-  .section-head h2 {
-    font-size: clamp(1.6rem, 6.5vw, 2.2rem);
-    font-weight: 800;
-    margin-top: 8px;
-  }
-  .section-head p {
-    color: var(--muted);
-    margin-top: 10px;
-    line-height: 1.65;
-  }
-
-  /* ---------- Reveal on scroll ---------- */
-  .reveal {
-    opacity: 0;
-    transform: translateY(36px);
-    transition: opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1);
-    transition-delay: var(--delay, 0s);
-  }
-  .reveal.in { opacity: 1; transform: none; }
-
-  /* ---------- Cards with clip reveal + inner zoom ---------- */
-  .cards { display: grid; gap: 18px; }
-  .card {
+  /* ---------- After the journey ---------- */
+  .outro {
     position: relative;
-    border-radius: var(--radius);
-    overflow: hidden;
-    aspect-ratio: 4 / 5;
-    background: var(--surface);
-  }
-  .card .card-img {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    transform: scale(1.18);
-    transition: transform 1.2s cubic-bezier(.2,.7,.2,1);
-  }
-  .card.in .card-img { transform: scale(1); }
-  .card .card-label {
-    position: absolute;
-    inset-inline: 0;
-    bottom: 0;
-    padding: 40px 18px 18px;
-    background: linear-gradient(to top, rgba(0,0,0,.75), transparent);
-    font-weight: 700;
-    font-size: 1.05rem;
-  }
-  .card .card-label small {
-    display: block;
-    font-weight: 400;
-    color: var(--muted);
-    font-size: .8rem;
-    margin-top: 3px;
-  }
-
-  /* ---------- Parallax banner ---------- */
-  .parallax {
-    position: relative;
-    height: 64svh;
-    overflow: hidden;
-    display: grid;
-    place-items: center;
-    isolation: isolate;
-  }
-  .parallax-img {
-    position: absolute;
-    inset: -22% 0;
-    z-index: -1;
-    background-size: cover;
-    background-position: center;
-    will-change: transform;
-  }
-  .parallax::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: rgba(11,11,15,.45);
-  }
-  .parallax blockquote {
-    padding: 0 28px;
+    padding: 90px 24px calc(60px + env(safe-area-inset-bottom));
     text-align: center;
-    font-size: clamp(1.3rem, 5.5vw, 1.9rem);
-    font-weight: 700;
-    line-height: 1.5;
-    max-width: 620px;
+    background: #04070f;
   }
-  .parallax cite {
-    display: block;
-    margin-top: 14px;
-    font-style: normal;
-    font-size: .85rem;
-    color: var(--accent);
-    font-weight: 700;
-    letter-spacing: .12em;
+  .outro h2 { font-size: clamp(1.7rem, 7vw, 2.4rem); font-weight: 800; text-wrap: balance; }
+  .outro p {
+    color: var(--muted);
+    max-width: 460px;
+    margin: 16px auto 0;
+    line-height: 1.7;
   }
-
-  /* ---------- Horizontal snap gallery ---------- */
-  .gallery {
-    display: flex;
-    gap: 14px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    padding: 4px 20px 18px;
-    margin: 0 -20px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .gallery::-webkit-scrollbar { display: none; }
-  .shot {
-    flex: 0 0 72%;
-    scroll-snap-align: center;
-    border-radius: var(--radius);
-    overflow: hidden;
-    aspect-ratio: 3 / 4;
-    position: relative;
-    background: var(--surface);
-  }
-  .shot .shot-img {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    transition: transform .6s cubic-bezier(.2,.7,.2,1), filter .6s;
-    transform: scale(1.12);
-    filter: saturate(.5) brightness(.75);
-  }
-  .shot.active .shot-img {
-    transform: scale(1);
-    filter: none;
-  }
-  .shot .shot-num {
-    position: absolute;
-    top: 14px;
-    inset-inline-start: 14px;
-    background: rgba(0,0,0,.5);
-    backdrop-filter: blur(6px);
-    border-radius: 999px;
-    padding: 4px 12px;
-    font-size: .75rem;
-    font-weight: 700;
-  }
-
-  /* ---------- Marquee ---------- */
-  .marquee {
-    overflow: hidden;
-    padding: 26px 0;
-    border-block: 1px solid rgba(255,255,255,.08);
-    white-space: nowrap;
-  }
-  .marquee-track {
+  .outro .again {
     display: inline-block;
-    animation: marquee 18s linear infinite;
-  }
-  .marquee-track span {
-    font-size: 1.4rem;
+    margin-top: 30px;
+    background: var(--accent);
+    color: #1a1206;
+    text-decoration: none;
     font-weight: 800;
-    margin-inline-end: 40px;
-    color: transparent;
-    -webkit-text-stroke: 1px rgba(255,255,255,.45);
+    padding: 14px 32px;
+    border-radius: 999px;
+    transition: transform .25s;
   }
-  .marquee-track span.solid {
-    color: var(--accent);
-    -webkit-text-stroke: 0;
-  }
-  @keyframes marquee {
-    from { transform: translateX(0); }
-    to   { transform: translateX(50%); }
-  }
+  .outro .again:active { transform: scale(.94); }
+  .outro footer { margin-top: 64px; color: var(--muted); font-size: .8rem; }
 
-  /* ---------- Footer ---------- */
-  footer {
-    padding: 56px 20px calc(40px + env(safe-area-inset-bottom));
-    text-align: center;
-    color: var(--muted);
-    font-size: .85rem;
-  }
-  footer .logo { font-size: 1.3rem; margin-bottom: 10px; }
-
-  /* ---------- Larger screens ---------- */
-  @media (min-width: 640px) {
-    .cards { grid-template-columns: repeat(2, 1fr); }
-    .shot { flex-basis: 40%; }
-  }
-  @media (min-width: 1024px) {
-    .cards { grid-template-columns: repeat(3, 1fr); }
-    .shot { flex-basis: 28%; }
-  }
-
-  /* ---------- Reduced motion ---------- */
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: .01s !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: .01s !important;
-    }
+    html { scroll-behavior: auto; }
+    .caption.opener .hint { animation: none; }
   }
 </style>
 </head>
 <body>
 
-<header id="header">
+<div class="progress"><i id="bar"></i></div>
+<header>
   <div class="logo">מושן<span>.</span></div>
-  <button class="menu-btn">תפריט</button>
+  <div class="clock" id="clock">05:40</div>
 </header>
 
-<!-- Hero: Ken Burns zoom -->
-<div class="hero">
-  <div class="hero-img" data-img="mountain"></div>
-  <div class="hero-content">
-    <span class="kicker">IMAGE MOTION</span>
-    <h1>תמונות שזזות,<br>סיפור שנשאר.</h1>
-    <p>אתר מובייל לדוגמה עם אפקטי תנועה: זום איטי, פרלקסה בגלילה, חשיפת תמונות וגלריה נגללת — הכל ב־CSS ו־JS נקיים.</p>
-    <a class="cta" href="#work">לצפייה בעבודות</a>
+<!-- One hero, pinned for the whole page. Scrolling = time passing. -->
+<div class="journey" id="journey">
+  <div class="stage">
+    <div class="sky" id="sky"></div>
+    <div class="stars" id="stars"></div>
+    <div class="orb sun" id="sun"></div>
+    <div class="orb moon" id="moon"></div>
+    <div class="layer" id="far"></div>
+    <div class="layer" id="mid"></div>
+    <div class="layer" id="near"></div>
+    <div class="layer" id="fg"></div>
+
+    <div class="caption opener" data-start="-0.2" data-end="0.1">
+      <div class="inner">
+        <span class="when">SCROLL-DRIVEN HERO</span>
+        <h1>מסע של יום אחד</h1>
+        <p>הירו אחד שרץ על כל העמוד. הגלילה שלך היא שמזיזה את השמש, את ההרים ואת השעות.</p>
+        <div class="hint">גלול כדי להתחיל ▾</div>
+      </div>
+    </div>
+
+    <div class="caption" data-start="0.16" data-end="0.3">
+      <div class="chip">
+        <span class="when">05:47 · עלות השחר</span>
+        <h2>האור הראשון</h2>
+        <p>השמש מטפסת מעל הרכס, והשמיים מחליפים סגול בכתום. המסע רק מתחיל.</p>
+      </div>
+    </div>
+
+    <div class="caption" data-start="0.38" data-end="0.52">
+      <div class="chip">
+        <span class="when">12:30 · צהריים</span>
+        <h2>שיא היום</h2>
+        <p>השמש בפסגה, השמיים כחולים ובהירים. שים לב איך ההרים הקרובים רצים מהר מהרחוקים.</p>
+      </div>
+    </div>
+
+    <div class="caption" data-start="0.6" data-end="0.74">
+      <div class="chip">
+        <span class="when">18:52 · שקיעה</span>
+        <h2>שעת הזהב</h2>
+        <p>השמש צונחת אל האופק וצובעת הכל באדום. עוד רגע יעלו הכוכבים.</p>
+      </div>
+    </div>
+
+    <div class="caption" data-start="0.82" data-end="0.96">
+      <div class="chip">
+        <span class="when">23:10 · לילה</span>
+        <h2>שקט של כוכבים</h2>
+        <p>הירח תלוי מעל העמק, וההרים נחים. הגעת לסוף היום — ולסוף הדף.</p>
+      </div>
+    </div>
   </div>
-  <div class="scroll-hint">▾</div>
 </div>
 
-<!-- Cards: clip reveal -->
-<section id="work">
-  <div class="section-head reveal">
-    <span class="kicker">פרויקטים</span>
-    <h2>כל תמונה נחשפת בתנועה</h2>
-    <p>גללו מטה — כל כרטיס נכנס עם אנימציית זום פנימית ברגע שהוא מופיע במסך.</p>
-  </div>
-  <div class="cards">
-    <div class="card reveal" style="--delay:.05s">
-      <div class="card-img" data-img="dunes"></div>
-      <div class="card-label">חולות מדבר<small>צילום אווירי · 2026</small></div>
-    </div>
-    <div class="card reveal" style="--delay:.15s">
-      <div class="card-img" data-img="ocean"></div>
-      <div class="card-label">קו החוף<small>סדרת ים · 2026</small></div>
-    </div>
-    <div class="card reveal" style="--delay:.25s">
-      <div class="card-img" data-img="forest"></div>
-      <div class="card-label">יער בערפל<small>טבע · 2025</small></div>
-    </div>
-    <div class="card reveal" style="--delay:.35s">
-      <div class="card-img" data-img="city"></div>
-      <div class="card-label">אורות העיר<small>אורבני · 2025</small></div>
-    </div>
-  </div>
+<section class="outro">
+  <h2>יום שלם בגלילה אחת</h2>
+  <p>כל מה שראית — שמש, ירח, כוכבים, ארבע שכבות הרים וצבעי שמיים משתנים — מחושב מאחוז הגלילה שלך בדף, בלי אף ספרייה חיצונית.</p>
+  <a class="again" href="#journey">עוד פעם מההתחלה</a>
+  <footer>מושן. — אתר דוגמה, קובץ HTML אחד.</footer>
 </section>
-
-<!-- Parallax quote -->
-<div class="parallax">
-  <div class="parallax-img" data-img="night"></div>
-  <blockquote class="reveal">
-    ״התנועה היא מה שהופך תמונה טובה לחוויה.״
-    <cite>— סטודיו מושן</cite>
-  </blockquote>
-</div>
-
-<!-- Horizontal snap gallery -->
-<section>
-  <div class="section-head reveal">
-    <span class="kicker">גלריה</span>
-    <h2>החליקו הצידה</h2>
-    <p>גלריית מגע עם הצמדה (snap) — התמונה שבמרכז מתעוררת לחיים בצבע ובזום.</p>
-  </div>
-  <div class="gallery" id="gallery">
-    <div class="shot"><div class="shot-img" data-img="dunes"></div><span class="shot-num">01</span></div>
-    <div class="shot"><div class="shot-img" data-img="ocean"></div><span class="shot-num">02</span></div>
-    <div class="shot"><div class="shot-img" data-img="forest"></div><span class="shot-num">03</span></div>
-    <div class="shot"><div class="shot-img" data-img="city"></div><span class="shot-num">04</span></div>
-    <div class="shot"><div class="shot-img" data-img="mountain"></div><span class="shot-num">05</span></div>
-  </div>
-</section>
-
-<!-- Marquee -->
-<div class="marquee" aria-hidden="true">
-  <div class="marquee-track">
-    <span>PARALLAX</span><span class="solid">KEN BURNS</span><span>SNAP GALLERY</span><span class="solid">REVEAL</span><span>MARQUEE</span>
-    <span>PARALLAX</span><span class="solid">KEN BURNS</span><span>SNAP GALLERY</span><span class="solid">REVEAL</span><span>MARQUEE</span>
-  </div>
-</div>
-
-<footer>
-  <div class="logo">מושן<span>.</span></div>
-  <p>אתר דוגמה — נבנה בקובץ HTML אחד, ללא ספריות חיצוניות.</p>
-</footer>
 
 <script>
-  /* ---------- Generated SVG "photos" (self-contained, no network needed) ---------- */
-  const scenes = {
-    mountain: { sky: ['#2b1d4f', '#e0653f'], far: '#3f2d63', near: '#1c1430', sun: '#ffb37a', type: 'peaks' },
-    dunes:    { sky: ['#f2a65a', '#7a3b2e'], far: '#c77b46', near: '#8a4a30', sun: '#ffe3b3', type: 'dunes' },
-    ocean:    { sky: ['#0f3057', '#3aa1c9'], far: '#14507a', near: '#0a2a45', sun: '#cfeef7', type: 'waves' },
-    forest:   { sky: ['#152b1e', '#3e7050'], far: '#1e4630', near: '#0e2418', sun: '#b8dcae', type: 'trees' },
-    night:    { sky: ['#060a1c', '#22355f'], far: '#101b38', near: '#070d20', sun: '#e8ecff', type: 'peaks' },
-    city:     { sky: ['#1a1030', '#d94f6b'], far: '#2a1a4a', near: '#120a24', sun: '#ffd29e', type: 'city' }
+  /* ---------- Scroll-driven hero engine ---------- */
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const hex = c => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
+  const mix = (c1, c2, t) => {
+    const a = hex(c1), b = hex(c2);
+    return `rgb(${Math.round(lerp(a[0], b[0], t))},${Math.round(lerp(a[1], b[1], t))},${Math.round(lerp(a[2], b[2], t))})`;
   };
 
-  function jagged(baseY, amp, steps, seed) {
-    let d = `M0 ${baseY}`;
-    for (let i = 1; i <= steps; i++) {
-      const x = (800 / steps) * i;
-      const y = baseY - Math.abs(Math.sin(i * seed) * amp);
-      d += ` L${x} ${y}`;
+  /* Time-of-day keyframes: dawn → day → sunset → night */
+  const KEYS = [
+    { p: 0.00, top: '#1b1440', mid: '#7d4a72', bot: '#f2976f', sun: '#ffd9a0', far: '#553d78', mid2: '#3a2a5e', near: '#241a44', fg: '#140e2c', stars: 0 },
+    { p: 0.40, top: '#2a6bb5', mid: '#7fb4e0', bot: '#cfe6f2', sun: '#fff3d6', far: '#6d8fb8', mid2: '#4a6b96', near: '#2e4668', fg: '#1d2f4a', stars: 0 },
+    { p: 0.68, top: '#3b1d4f', mid: '#c2504f', bot: '#ff9d5c', sun: '#ff9d54', far: '#5e3363', mid2: '#42224c', near: '#2a1436', fg: '#180b22', stars: 0.15 },
+    { p: 1.00, top: '#04070f', mid: '#0d1630', bot: '#1a2547', sun: '#e8ecff', far: '#141d3a', mid2: '#0d1428', near: '#070b18', fg: '#04060f', stars: 1 },
+  ];
+  function sample(p) {
+    let i = 0;
+    while (i < KEYS.length - 2 && p > KEYS[i + 1].p) i++;
+    const a = KEYS[i], b = KEYS[i + 1];
+    const t = clamp((p - a.p) / (b.p - a.p), 0, 1);
+    const out = {};
+    for (const k in a) {
+      if (k === 'p') continue;
+      out[k] = typeof a[k] === 'number' ? lerp(a[k], b[k], t) : mix(a[k], b[k], t);
     }
-    return d + ' L800 1000 L0 1000 Z';
+    return out;
   }
 
-  function sceneSVG(s) {
-    let layers = '';
-    if (s.type === 'peaks') {
-      layers = `<path d="${jagged(560, 260, 7, 2.1)}" fill="${s.far}"/>
-                <path d="${jagged(700, 300, 5, 3.7)}" fill="${s.near}"/>`;
-    } else if (s.type === 'dunes') {
-      layers = `<path d="M0 560 Q200 460 420 560 T800 540 L800 1000 L0 1000 Z" fill="${s.far}"/>
-                <path d="M0 720 Q260 600 520 720 T800 700 L800 1000 L0 1000 Z" fill="${s.near}"/>`;
-    } else if (s.type === 'waves') {
-      layers = `<path d="M0 600 Q100 580 200 600 T400 600 T600 600 T800 600 L800 1000 L0 1000 Z" fill="${s.far}"/>
-                <path d="M0 740 Q100 715 200 740 T400 740 T600 740 T800 740 L800 1000 L0 1000 Z" fill="${s.near}"/>`;
-    } else if (s.type === 'trees') {
-      let trees = '';
-      for (let i = 0; i < 9; i++) {
-        const x = 40 + i * 90, h = 260 + (i % 3) * 90;
-        trees += `<polygon points="${x},${980 - h} ${x - 46},980 ${x + 46},980" fill="${i % 2 ? s.far : s.near}" opacity="${0.75 + (i % 3) * 0.12}"/>`;
-      }
-      layers = trees;
-    } else if (s.type === 'city') {
-      let b = '';
-      for (let i = 0; i < 10; i++) {
-        const w = 60 + (i % 3) * 24, x = i * 80, h = 240 + ((i * 137) % 340);
-        b += `<rect x="${x}" y="${1000 - h}" width="${w}" height="${h}" fill="${i % 2 ? s.far : s.near}"/>`;
-        for (let wy = 0; wy < 4; wy++)
-          b += `<rect x="${x + 12}" y="${1000 - h + 30 + wy * 70}" width="10" height="14" fill="${s.sun}" opacity=".8"/>`;
-      }
-      layers = b;
+  /* ---------- Seamless tiling ridge masks (black silhouettes) ---------- */
+  const W = 1600, H = 1000;
+  function ridgeMask(baseY, amp, k1, k2, ph) {
+    let d = '';
+    const N = 96;
+    for (let i = 0; i <= N; i++) {
+      const x = (W / N) * i;
+      const y = baseY - amp * (0.62 * Math.abs(Math.sin(Math.PI * k1 * x / W + ph)) + 0.38 * (0.5 + 0.5 * Math.sin(2 * Math.PI * k2 * x / W)));
+      d += (i ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
     }
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000">
-      <defs><linearGradient id="sky" x1="0" y1="1" x2="0" y2="0">
-        <stop offset="0" stop-color="${s.sky[1]}"/><stop offset="1" stop-color="${s.sky[0]}"/>
-      </linearGradient></defs>
-      <rect width="800" height="1000" fill="url(#sky)"/>
-      <circle cx="560" cy="330" r="90" fill="${s.sun}" opacity=".9"/>
-      ${layers}
-    </svg>`;
+    d += ` L${W} ${H} L0 ${H} Z`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><path d="${d}" fill="#000"/></svg>`;
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  }
+  function treeMask(baseY) {
+    const n = 10, step = W / n;
+    let shapes = `<rect x="0" y="${baseY + 60}" width="${W}" height="${H - baseY - 60}"/>`;
+    for (let i = 0; i < n; i++) {
+      const x = step * i + step / 2;
+      const h = 150 + ((i * 73) % 3) * 60;
+      shapes += `<polygon points="${x},${baseY + 70 - h} ${x - 42},${baseY + 80} ${x + 42},${baseY + 80}"/>`;
+    }
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><g fill="#000">${shapes}</g></svg>`;
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  }
+  function starField() {
+    let dots = '';
+    for (let i = 0; i < 130; i++) {
+      const x = (i * 137.5) % 100, y = ((i * 61.8) % 70);
+      const r = 0.6 + ((i * 29) % 10) / 9;
+      dots += `<circle cx="${x}%" cy="${y}%" r="${r.toFixed(1)}" opacity="${(0.35 + ((i * 17) % 10) / 15).toFixed(2)}"/>`;
+    }
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><g fill="#dfe6ff">${dots}</g></svg>`;
     return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
   }
 
-  document.querySelectorAll('[data-img]').forEach(el => {
-    const s = scenes[el.dataset.img];
-    if (s) el.style.backgroundImage = sceneSVG(s);
+  const layers = [
+    { el: document.getElementById('far'),  mask: ridgeMask(520, 300, 3, 2, 0.7), speed: 260,  color: 'far'  },
+    { el: document.getElementById('mid'),  mask: ridgeMask(660, 330, 4, 3, 2.1), speed: 560,  color: 'mid2' },
+    { el: document.getElementById('near'), mask: ridgeMask(790, 290, 5, 2, 4.4), speed: 980,  color: 'near' },
+    { el: document.getElementById('fg'),   mask: treeMask(860),                  speed: 1500, color: 'fg'   },
+  ];
+  layers.forEach(l => {
+    l.el.style.webkitMaskImage = l.mask;
+    l.el.style.maskImage = l.mask;
   });
+  const stars = document.getElementById('stars');
+  stars.style.backgroundImage = starField();
 
-  /* ---------- Header on scroll ---------- */
-  const header = document.getElementById('header');
-  addEventListener('scroll', () => {
-    header.classList.toggle('scrolled', scrollY > 40);
-  }, { passive: true });
+  /* ---------- Captions ---------- */
+  const captions = [...document.querySelectorAll('.caption')].map(el => ({
+    el,
+    start: parseFloat(el.dataset.start),
+    end: parseFloat(el.dataset.end),
+  }));
 
-  /* ---------- Reveal on scroll (IntersectionObserver) ---------- */
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('in');
-        io.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.18 });
-  document.querySelectorAll('.reveal, .card').forEach(el => io.observe(el));
+  /* ---------- Per-frame update ---------- */
+  const journey = document.getElementById('journey');
+  const sky = document.getElementById('sky');
+  const sun = document.getElementById('sun');
+  const moon = document.getElementById('moon');
+  const bar = document.getElementById('bar');
+  const clock = document.getElementById('clock');
+  let lastP = -1;
 
-  /* ---------- Parallax banner ---------- */
-  const pImg = document.querySelector('.parallax-img');
-  const pWrap = document.querySelector('.parallax');
-  function parallax() {
-    const r = pWrap.getBoundingClientRect();
-    if (r.bottom > 0 && r.top < innerHeight) {
-      const progress = (innerHeight - r.top) / (innerHeight + r.height); // 0..1
-      pImg.style.transform = `translateY(${(progress - 0.5) * 34}%)`;
+  function frame() {
+    const max = journey.offsetHeight - innerHeight;
+    const p = clamp((scrollY - journey.offsetTop) / max, 0, 1);
+    if (Math.abs(p - lastP) > 0.0004) {
+      lastP = p;
+      const s = sample(p);
+
+      sky.style.background = `linear-gradient(to bottom, ${s.top} 0%, ${s.mid} 55%, ${s.bot} 100%)`;
+      stars.style.opacity = s.stars;
+
+      /* Sun: rises, crosses the sky, sets (done by p≈0.78) */
+      const sp = clamp(p / 0.78, 0, 1);
+      sun.style.insetInlineStart = lerp(12, 88, sp) + '%';
+      sun.style.top = (74 - Math.sin(sp * Math.PI) * 52) + '%';
+      sun.style.background = s.sun;
+      sun.style.setProperty('--sc', s.sun);
+      sun.style.opacity = p < 0.78 ? 1 : clamp(1 - (p - 0.78) / 0.06, 0, 1);
+
+      /* Moon: rises after sunset */
+      const mp = clamp((p - 0.74) / 0.26, 0, 1);
+      moon.style.opacity = mp;
+      moon.style.insetInlineStart = lerp(55, 72, mp) + '%';
+      moon.style.top = lerp(50, 16, mp) + '%';
+      moon.style.background = '#e8ecff';
+
+      /* Parallax ridges: each layer runs at its own speed */
+      layers.forEach(l => {
+        const x = (p * l.speed).toFixed(1) + 'px';
+        l.el.style.webkitMaskPosition = x + ' 0';
+        l.el.style.maskPosition = x + ' 0';
+        l.el.style.backgroundColor = s[l.color];
+      });
+
+      /* Captions fade in/out over their scroll range */
+      captions.forEach(c => {
+        const fade = 0.045;
+        const o = clamp((p - c.start) / fade, 0, 1) * clamp((c.end - p) / fade, 0, 1);
+        c.el.style.opacity = o;
+        c.el.style.transform = `translateY(${(1 - o) * 26}px)`;
+      });
+
+      /* Progress bar + clock (05:40 → 23:30) */
+      bar.style.transform = `scaleX(${p})`;
+      const mins = 340 + p * (1410 - 340);
+      const hh = String(Math.floor(mins / 60)).padStart(2, '0');
+      const mm = String(Math.floor(mins % 60)).padStart(2, '0');
+      clock.textContent = `${hh}:${mm}`;
     }
-    requestAnimationFrame(parallax);
+    requestAnimationFrame(frame);
   }
-  requestAnimationFrame(parallax);
-
-  /* ---------- Snap gallery: activate centered shot ---------- */
-  const gallery = document.getElementById('gallery');
-  const shots = [...gallery.querySelectorAll('.shot')];
-  function updateActive() {
-    const center = gallery.getBoundingClientRect().left + gallery.clientWidth / 2;
-    let best = null, bestDist = Infinity;
-    shots.forEach(s => {
-      const r = s.getBoundingClientRect();
-      const d = Math.abs(r.left + r.width / 2 - center);
-      if (d < bestDist) { bestDist = d; best = s; }
-    });
-    shots.forEach(s => s.classList.toggle('active', s === best));
-  }
-  gallery.addEventListener('scroll', updateActive, { passive: true });
-  updateActive();
+  requestAnimationFrame(frame);
 </script>
 </body>
 </html>
