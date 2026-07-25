@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0f">
+<title>מסע של יום אחד — הירו נגלל על כל העמוד</title>
+<style>
+  :root {
+    --text: #f5f4f7;
+    --muted: rgba(245, 244, 247, .72);
+    --accent: #ffb35c;
+    --chip: rgba(8, 10, 20, .5);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: #04070f;
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Heebo", "Assistant", Arial, sans-serif;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Fixed chrome ---------- */
+  .progress {
+    position: fixed;
+    top: 0;
+    inset-inline: 0;
+    height: 3px;
+    z-index: 60;
+    background: rgba(255,255,255,.12);
+  }
+  .progress i {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    transform-origin: right;
+    transform: scaleX(0);
+  }
+  header {
+    position: fixed;
+    inset-inline: 0;
+    top: 3px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    padding-top: calc(14px + env(safe-area-inset-top));
+    pointer-events: none;
+  }
+  .logo { font-weight: 800; font-size: 1.1rem; text-shadow: 0 1px 12px rgba(0,0,0,.5); }
+  .logo span { color: var(--accent); }
+  .clock {
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    background: var(--chip);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+  }
+
+  /* ---------- The journey: sticky full-screen hero ---------- */
+  .journey { height: 560svh; position: relative; }
+  .stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+  .sky, .layer, .stars, .haze { position: absolute; inset: 0; }
+  .stars {
+    opacity: 0;
+    will-change: opacity;
+  }
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    transform: translate(50%, -50%);
+  }
+  .sun  { width: 16vmin; height: 16vmin; }
+  .sun::after {
+    content: "";
+    position: absolute;
+    inset: -110%;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--sc, #ffd9a0) 0%, transparent 62%);
+    opacity: .5;
+  }
+  .moon { width: 8vmin;  height: 8vmin; opacity: 0; box-shadow: 0 0 60px 14px rgba(220, 228, 255, .35); }
+  .moon::after {
+    content: "";
+    position: absolute;
+    width: 62%;
+    height: 62%;
+    border-radius: 50%;
+    top: 12%;
+    inset-inline-start: 8%;
+    background: rgba(0, 0, 30, .18);
+  }
+  .layer {
+    -webkit-mask-repeat: repeat-x;
+    mask-repeat: repeat-x;
+    -webkit-mask-size: auto 100%;
+    mask-size: auto 100%;
+    will-change: -webkit-mask-position, mask-position, background-color;
+  }
+
+  /* ---------- Captions that live over the hero ---------- */
+  .caption {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 16svh;
+    display: grid;
+    place-items: center;
+    padding: 0 24px;
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity, transform;
+  }
+  .caption .chip {
+    background: var(--chip);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 20px;
+    padding: 22px 26px;
+    max-width: 480px;
+    text-align: center;
+  }
+  .caption .when {
+    color: var(--accent);
+    font-weight: 800;
+    font-size: .78rem;
+    letter-spacing: .2em;
+  }
+  .caption h2 {
+    font-size: clamp(1.5rem, 6.5vw, 2.1rem);
+    font-weight: 800;
+    margin-top: 8px;
+    text-wrap: balance;
+  }
+  .caption p {
+    color: var(--muted);
+    line-height: 1.65;
+    margin-top: 10px;
+    font-size: .95rem;
+  }
+
+  /* Opening title — bigger, no chip */
+  .caption.opener { bottom: auto; top: 0; height: 100svh; place-items: center; }
+  .caption.opener .inner { text-align: center; max-width: 560px; }
+  .caption.opener .when { font-size: .85rem; }
+  .caption.opener h1 {
+    font-size: clamp(2.6rem, 12vw, 4.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-top: 12px;
+    text-shadow: 0 2px 30px rgba(0,0,0,.45);
+    text-wrap: balance;
+  }
+  .caption.opener p {
+    color: var(--muted);
+    margin-top: 14px;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    text-shadow: 0 1px 14px rgba(0,0,0,.5);
+  }
+  .caption.opener .hint {
+    margin-top: 34px;
+    font-size: .8rem;
+    letter-spacing: .14em;
+    color: var(--muted);
+    animation: bob 1.8s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); opacity: .55; }
+    50% { transform: translateY(9px); opacity: 1; }
+  }
+
+  /* ---------- After the journey ---------- */
+  .outro {
+    position: relative;
+    padding: 90px 24px calc(60px + env(safe-area-inset-bottom));
+    text-align: center;
+    background: #04070f;
+  }
+  .outro h2 { font-size: clamp(1.7rem, 7vw, 2.4rem); font-weight: 800; text-wrap: balance; }
+  .outro p {
+    color: var(--muted);
+    max-width: 460px;
+    margin: 16px auto 0;
+    line-height: 1.7;
+  }
+  .outro .again {
+    display: inline-block;
+    margin-top: 30px;
+    background: var(--accent);
+    color: #1a1206;
+    text-decoration: none;
+    font-weight: 800;
+    padding: 14px 32px;
+    border-radius: 999px;
+    transition: transform .25s;
+  }
+  .outro .again:active { transform: scale(.94); }
+  .outro footer { margin-top: 64px; color: var(--muted); font-size: .8rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .caption.opener .hint { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress"><i id="bar"></i></div>
+<header>
+  <div class="logo">מושן<span>.</span></div>
+  <div class="clock" id="clock">05:40</div>
+</header>
+
+<!-- One hero, pinned for the whole page. Scrolling = time passing. -->
+<div class="journey" id="journey">
+  <div class="stage">
+    <div class="sky" id="sky"></div>
+    <div class="stars" id="stars"></div>
+    <div class="orb sun" id="sun"></div>
+    <div class="orb moon" id="moon"></div>
+    <div class="layer" id="far"></div>
+    <div class="layer" id="mid"></div>
+    <div class="layer" id="near"></div>
+    <div class="layer" id="fg"></div>
+
+    <div class="caption opener" data-start="-0.2" data-end="0.1">
+      <div class="inner">
+        <span class="when">SCROLL-DRIVEN HERO</span>
+        <h1>מסע של יום אחד</h1>
+        <p>הירו אחד שרץ על כל העמוד. הגלילה שלך היא שמזיזה את השמש, את ההרים ואת השעות.</p>
+        <div class="hint">גלול כדי להתחיל ▾</div>
+      </div>
+    </div>
+
+    <div class="caption" data-start="0.16" data-end="0.3">
+      <div class="chip">
+        <span class="when">05:47 · עלות השחר</span>
+        <h2>האור הראשון</h2>
+        <p>השמש מטפסת מעל הרכס, והשמיים מחליפים סגול בכתום. המסע רק מתחיל.</p>
+      </div>
+    </div>
+
+    <div class="caption" data-start="0.38" data-end="0.52">
+      <div class="chip">
+        <span class="when">12:30 · צהריים</span>
+        <h2>שיא היום</h2>
+        <p>השמש בפסגה, השמיים כחולים ובהירים. שים לב איך ההרים הקרובים רצים מהר מהרחוקים.</p>
+      </div>
+    </div>
+
+    <div class="caption" data-start="0.6" data-end="0.74">
+      <div class="chip">
+        <span class="when">18:52 · שקיעה</span>
+        <h2>שעת הזהב</h2>
+        <p>השמש צונחת אל האופק וצובעת הכל באדום. עוד רגע יעלו הכוכבים.</p>
+      </div>
+    </div>
+
+    <div class="caption" data-start="0.82" data-end="0.96">
+      <div class="chip">
+        <span class="when">23:10 · לילה</span>
+        <h2>שקט של כוכבים</h2>
+        <p>הירח תלוי מעל העמק, וההרים נחים. הגעת לסוף היום — ולסוף הדף.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="outro">
+  <h2>יום שלם בגלילה אחת</h2>
+  <p>כל מה שראית — שמש, ירח, כוכבים, ארבע שכבות הרים וצבעי שמיים משתנים — מחושב מאחוז הגלילה שלך בדף, בלי אף ספרייה חיצונית.</p>
+  <a class="again" href="#journey">עוד פעם מההתחלה</a>
+  <footer>מושן. — אתר דוגמה, קובץ HTML אחד.</footer>
+</section>
+
+<script>
+  /* ---------- Scroll-driven hero engine ---------- */
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const hex = c => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
+  const mix = (c1, c2, t) => {
+    const a = hex(c1), b = hex(c2);
+    return `rgb(${Math.round(lerp(a[0], b[0], t))},${Math.round(lerp(a[1], b[1], t))},${Math.round(lerp(a[2], b[2], t))})`;
+  };
+
+  /* Time-of-day keyframes: dawn → day → sunset → night */
+  const KEYS = [
+    { p: 0.00, top: '#1b1440', mid: '#7d4a72', bot: '#f2976f', sun: '#ffd9a0', far: '#553d78', mid2: '#3a2a5e', near: '#241a44', fg: '#140e2c', stars: 0 },
+    { p: 0.40, top: '#2a6bb5', mid: '#7fb4e0', bot: '#cfe6f2', sun: '#fff3d6', far: '#6d8fb8', mid2: '#4a6b96', near: '#2e4668', fg: '#1d2f4a', stars: 0 },
+    { p: 0.68, top: '#3b1d4f', mid: '#c2504f', bot: '#ff9d5c', sun: '#ff9d54', far: '#5e3363', mid2: '#42224c', near: '#2a1436', fg: '#180b22', stars: 0.15 },
+    { p: 1.00, top: '#04070f', mid: '#0d1630', bot: '#1a2547', sun: '#e8ecff', far: '#141d3a', mid2: '#0d1428', near: '#070b18', fg: '#04060f', stars: 1 },
+  ];
+  function sample(p) {
+    let i = 0;
+    while (i < KEYS.length - 2 && p > KEYS[i + 1].p) i++;
+    const a = KEYS[i], b = KEYS[i + 1];
+    const t = clamp((p - a.p) / (b.p - a.p), 0, 1);
+    const out = {};
+    for (const k in a) {
+      if (k === 'p') continue;
+      out[k] = typeof a[k] === 'number' ? lerp(a[k], b[k], t) : mix(a[k], b[k], t);
+    }
+    return out;
+  }
+
+  /* ---------- Seamless tiling ridge masks (black silhouettes) ---------- */
+  const W = 1600, H = 1000;
+  function ridgeMask(baseY, amp, k1, k2, ph) {
+    let d = '';
+    const N = 96;
+    for (let i = 0; i <= N; i++) {
+      const x = (W / N) * i;
+      const y = baseY - amp * (0.62 * Math.abs(Math.sin(Math.PI * k1 * x / W + ph)) + 0.38 * (0.5 + 0.5 * Math.sin(2 * Math.PI * k2 * x / W)));
+      d += (i ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+    }
+    d += ` L${W} ${H} L0 ${H} Z`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><path d="${d}" fill="#000"/></svg>`;
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  }
+  function treeMask(baseY) {
+    const n = 10, step = W / n;
+    let shapes = `<rect x="0" y="${baseY + 60}" width="${W}" height="${H - baseY - 60}"/>`;
+    for (let i = 0; i < n; i++) {
+      const x = step * i + step / 2;
+      const h = 150 + ((i * 73) % 3) * 60;
+      shapes += `<polygon points="${x},${baseY + 70 - h} ${x - 42},${baseY + 80} ${x + 42},${baseY + 80}"/>`;
+    }
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><g fill="#000">${shapes}</g></svg>`;
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  }
+  function starField() {
+    let dots = '';
+    for (let i = 0; i < 130; i++) {
+      const x = (i * 137.5) % 100, y = ((i * 61.8) % 70);
+      const r = 0.6 + ((i * 29) % 10) / 9;
+      dots += `<circle cx="${x}%" cy="${y}%" r="${r.toFixed(1)}" opacity="${(0.35 + ((i * 17) % 10) / 15).toFixed(2)}"/>`;
+    }
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><g fill="#dfe6ff">${dots}</g></svg>`;
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  }
+
+  const layers = [
+    { el: document.getElementById('far'),  mask: ridgeMask(520, 300, 3, 2, 0.7), speed: 260,  color: 'far'  },
+    { el: document.getElementById('mid'),  mask: ridgeMask(660, 330, 4, 3, 2.1), speed: 560,  color: 'mid2' },
+    { el: document.getElementById('near'), mask: ridgeMask(790, 290, 5, 2, 4.4), speed: 980,  color: 'near' },
+    { el: document.getElementById('fg'),   mask: treeMask(860),                  speed: 1500, color: 'fg'   },
+  ];
+  layers.forEach(l => {
+    l.el.style.webkitMaskImage = l.mask;
+    l.el.style.maskImage = l.mask;
+  });
+  const stars = document.getElementById('stars');
+  stars.style.backgroundImage = starField();
+
+  /* ---------- Captions ---------- */
+  const captions = [...document.querySelectorAll('.caption')].map(el => ({
+    el,
+    start: parseFloat(el.dataset.start),
+    end: parseFloat(el.dataset.end),
+  }));
+
+  /* ---------- Per-frame update ---------- */
+  const journey = document.getElementById('journey');
+  const sky = document.getElementById('sky');
+  const sun = document.getElementById('sun');
+  const moon = document.getElementById('moon');
+  const bar = document.getElementById('bar');
+  const clock = document.getElementById('clock');
+  let lastP = -1;
+
+  function frame() {
+    const max = journey.offsetHeight - innerHeight;
+    const p = clamp((scrollY - journey.offsetTop) / max, 0, 1);
+    if (Math.abs(p - lastP) > 0.0004) {
+      lastP = p;
+      const s = sample(p);
+
+      sky.style.background = `linear-gradient(to bottom, ${s.top} 0%, ${s.mid} 55%, ${s.bot} 100%)`;
+      stars.style.opacity = s.stars;
+
+      /* Sun: rises, crosses the sky, sets (done by p≈0.78) */
+      const sp = clamp(p / 0.78, 0, 1);
+      sun.style.insetInlineStart = lerp(12, 88, sp) + '%';
+      sun.style.top = (74 - Math.sin(sp * Math.PI) * 52) + '%';
+      sun.style.background = s.sun;
+      sun.style.setProperty('--sc', s.sun);
+      sun.style.opacity = p < 0.78 ? 1 : clamp(1 - (p - 0.78) / 0.06, 0, 1);
+
+      /* Moon: rises after sunset */
+      const mp = clamp((p - 0.74) / 0.26, 0, 1);
+      moon.style.opacity = mp;
+      moon.style.insetInlineStart = lerp(55, 72, mp) + '%';
+      moon.style.top = lerp(50, 16, mp) + '%';
+      moon.style.background = '#e8ecff';
+
+      /* Parallax ridges: each layer runs at its own speed */
+      layers.forEach(l => {
+        const x = (p * l.speed).toFixed(1) + 'px';
+        l.el.style.webkitMaskPosition = x + ' 0';
+        l.el.style.maskPosition = x + ' 0';
+        l.el.style.backgroundColor = s[l.color];
+      });
+
+      /* Captions fade in/out over their scroll range */
+      captions.forEach(c => {
+        const fade = 0.045;
+        const o = clamp((p - c.start) / fade, 0, 1) * clamp((c.end - p) / fade, 0, 1);
+        c.el.style.opacity = o;
+        c.el.style.transform = `translateY(${(1 - o) * 26}px)`;
+      });
+
+      /* Progress bar + clock (05:40 → 23:30) */
+      bar.style.transform = `scaleX(${p})`;
+      const mins = 340 + p * (1410 - 340);
+      const hh = String(Math.floor(mins / 60)).padStart(2, '0');
+      const mm = String(Math.floor(mins % 60)).padStart(2, '0');
+      clock.textContent = `${hh}:${mm}`;
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+</script>
+</body>
+</html>

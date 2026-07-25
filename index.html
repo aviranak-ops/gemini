@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0b0b0f">
-<title>מסע של יום אחד — הירו נגלל על כל העמוד</title>
+<meta name="theme-color" content="#05060e">
+<title>אלכס — עוזרת AI קולית עם HUD חי</title>
 <style>
   :root {
-    --text: #f5f4f7;
-    --muted: rgba(245, 244, 247, .72);
-    --accent: #ffb35c;
-    --chip: rgba(8, 10, 20, .5);
+    --text: #eef0fa;
+    --muted: rgba(238, 240, 250, .68);
+    --accent: #9db4ff;
+    --chip: rgba(10, 12, 26, .55);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -18,7 +18,7 @@
   html { scroll-behavior: smooth; }
 
   body {
-    background: #04070f;
+    background: #05060e;
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Heebo", "Assistant", Arial, sans-serif;
     overflow-x: hidden;
@@ -32,7 +32,7 @@
     inset-inline: 0;
     height: 3px;
     z-index: 60;
-    background: rgba(255,255,255,.12);
+    background: rgba(255,255,255,.1);
   }
   .progress i {
     display: block;
@@ -53,72 +53,46 @@
     padding-top: calc(14px + env(safe-area-inset-top));
     pointer-events: none;
   }
-  .logo { font-weight: 800; font-size: 1.1rem; text-shadow: 0 1px 12px rgba(0,0,0,.5); }
+  .logo { font-weight: 800; font-size: 1.15rem; text-shadow: 0 1px 14px rgba(0,0,0,.6); }
   .logo span { color: var(--accent); }
-  .clock {
-    font-size: .8rem;
-    font-weight: 700;
-    letter-spacing: .08em;
+  .mode {
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .22em;
     background: var(--chip);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.1);
     border-radius: 999px;
-    padding: 6px 14px;
-    font-variant-numeric: tabular-nums;
+    padding: 7px 15px;
     direction: ltr;
+    color: var(--accent);
+    transition: color .6s;
   }
 
-  /* ---------- The journey: sticky full-screen hero ---------- */
-  .journey { height: 560svh; position: relative; }
+  /* ---------- Pinned stage ---------- */
+  .journey { height: 640svh; position: relative; }
   .stage {
     position: sticky;
     top: 0;
     height: 100svh;
     overflow: hidden;
+    background:
+      radial-gradient(120% 90% at 50% 0%, #10142c 0%, #05060e 60%),
+      #05060e;
   }
-  .sky, .layer, .stars, .haze { position: absolute; inset: 0; }
-  .stars {
-    opacity: 0;
-    will-change: opacity;
-  }
-  .orb {
+  #orb {
     position: absolute;
-    border-radius: 50%;
-    transform: translate(50%, -50%);
-  }
-  .sun  { width: 16vmin; height: 16vmin; }
-  .sun::after {
-    content: "";
-    position: absolute;
-    inset: -110%;
-    border-radius: 50%;
-    background: radial-gradient(circle, var(--sc, #ffd9a0) 0%, transparent 62%);
-    opacity: .5;
-  }
-  .moon { width: 8vmin;  height: 8vmin; opacity: 0; box-shadow: 0 0 60px 14px rgba(220, 228, 255, .35); }
-  .moon::after {
-    content: "";
-    position: absolute;
-    width: 62%;
-    height: 62%;
-    border-radius: 50%;
-    top: 12%;
-    inset-inline-start: 8%;
-    background: rgba(0, 0, 30, .18);
-  }
-  .layer {
-    -webkit-mask-repeat: repeat-x;
-    mask-repeat: repeat-x;
-    -webkit-mask-size: auto 100%;
-    mask-size: auto 100%;
-    will-change: -webkit-mask-position, mask-position, background-color;
+    inset: 0;
+    width: 100%;
+    height: 100%;
   }
 
-  /* ---------- Captions that live over the hero ---------- */
+  /* ---------- Captions ---------- */
   .caption {
     position: absolute;
     inset-inline: 0;
-    bottom: 16svh;
+    bottom: 12svh;
     display: grid;
     place-items: center;
     padding: 0 24px;
@@ -128,19 +102,20 @@
   }
   .caption .chip {
     background: var(--chip);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,.12);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,.1);
     border-radius: 20px;
     padding: 22px 26px;
     max-width: 480px;
     text-align: center;
   }
   .caption .when {
-    color: var(--accent);
     font-weight: 800;
-    font-size: .78rem;
-    letter-spacing: .2em;
+    font-size: .74rem;
+    letter-spacing: .24em;
+    direction: ltr;
+    display: inline-block;
   }
   .caption h2 {
     font-size: clamp(1.5rem, 6.5vw, 2.1rem);
@@ -150,32 +125,34 @@
   }
   .caption p {
     color: var(--muted);
-    line-height: 1.65;
+    line-height: 1.7;
     margin-top: 10px;
     font-size: .95rem;
   }
 
-  /* Opening title — bigger, no chip */
-  .caption.opener { bottom: auto; top: 0; height: 100svh; place-items: center; }
+  .caption.opener { bottom: auto; top: 0; height: 100svh; place-items: end center; padding-bottom: 14svh; }
   .caption.opener .inner { text-align: center; max-width: 560px; }
-  .caption.opener .when { font-size: .85rem; }
   .caption.opener h1 {
-    font-size: clamp(2.6rem, 12vw, 4.2rem);
+    font-size: clamp(3.4rem, 17vw, 5.4rem);
     font-weight: 800;
-    line-height: 1.1;
-    margin-top: 12px;
-    text-shadow: 0 2px 30px rgba(0,0,0,.45);
-    text-wrap: balance;
+    line-height: 1.05;
+    text-shadow: 0 2px 40px rgba(90, 120, 255, .35);
+  }
+  .caption.opener .tag {
+    color: var(--accent);
+    font-weight: 800;
+    font-size: .78rem;
+    letter-spacing: .3em;
+    direction: ltr;
   }
   .caption.opener p {
     color: var(--muted);
-    margin-top: 14px;
+    margin-top: 12px;
     font-size: 1.05rem;
-    line-height: 1.6;
-    text-shadow: 0 1px 14px rgba(0,0,0,.5);
+    line-height: 1.65;
   }
   .caption.opener .hint {
-    margin-top: 34px;
+    margin-top: 30px;
     font-size: .8rem;
     letter-spacing: .14em;
     color: var(--muted);
@@ -186,32 +163,40 @@
     50% { transform: translateY(9px); opacity: 1; }
   }
 
-  /* ---------- After the journey ---------- */
+  /* ---------- Outro ---------- */
   .outro {
     position: relative;
-    padding: 90px 24px calc(60px + env(safe-area-inset-bottom));
+    padding: 96px 24px calc(64px + env(safe-area-inset-bottom));
     text-align: center;
-    background: #04070f;
+    background: #05060e;
   }
-  .outro h2 { font-size: clamp(1.7rem, 7vw, 2.4rem); font-weight: 800; text-wrap: balance; }
+  .outro .tag {
+    color: var(--accent);
+    font-weight: 800;
+    font-size: .74rem;
+    letter-spacing: .26em;
+    direction: ltr;
+    display: inline-block;
+  }
+  .outro h2 { font-size: clamp(1.8rem, 8vw, 2.6rem); font-weight: 800; margin-top: 10px; text-wrap: balance; }
   .outro p {
     color: var(--muted);
     max-width: 460px;
     margin: 16px auto 0;
-    line-height: 1.7;
+    line-height: 1.75;
   }
-  .outro .again {
+  .outro .cta {
     display: inline-block;
     margin-top: 30px;
-    background: var(--accent);
-    color: #1a1206;
+    background: linear-gradient(135deg, #7f9bff, #b48cff);
+    color: #0a0c1a;
     text-decoration: none;
     font-weight: 800;
-    padding: 14px 32px;
+    padding: 15px 34px;
     border-radius: 999px;
     transition: transform .25s;
   }
-  .outro .again:active { transform: scale(.94); }
+  .outro .cta:active { transform: scale(.94); }
   .outro footer { margin-top: 64px; color: var(--muted); font-size: .8rem; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -224,215 +209,259 @@
 
 <div class="progress"><i id="bar"></i></div>
 <header>
-  <div class="logo">מושן<span>.</span></div>
-  <div class="clock" id="clock">05:40</div>
+  <div class="logo">אלכס<span>.</span></div>
+  <div class="mode" id="mode">LIVING-LIGHT</div>
 </header>
 
-<!-- One hero, pinned for the whole page. Scrolling = time passing. -->
+<!-- One orb, pinned for the whole page. Scrolling = getting to know her. -->
 <div class="journey" id="journey">
   <div class="stage">
-    <div class="sky" id="sky"></div>
-    <div class="stars" id="stars"></div>
-    <div class="orb sun" id="sun"></div>
-    <div class="orb moon" id="moon"></div>
-    <div class="layer" id="far"></div>
-    <div class="layer" id="mid"></div>
-    <div class="layer" id="near"></div>
-    <div class="layer" id="fg"></div>
+    <canvas id="orb"></canvas>
 
-    <div class="caption opener" data-start="-0.2" data-end="0.1">
+    <div class="caption opener" data-start="-0.2" data-end="0.09">
       <div class="inner">
-        <span class="when">SCROLL-DRIVEN HERO</span>
-        <h1>מסע של יום אחד</h1>
-        <p>הירו אחד שרץ על כל העמוד. הגלילה שלך היא שמזיזה את השמש, את ההרים ואת השעות.</p>
-        <div class="hint">גלול כדי להתחיל ▾</div>
+        <span class="tag">VOICE · AI · LIVING-LIGHT</span>
+        <h1>אלכס.</h1>
+        <p>עוזרת AI קולית, דו-לשונית, עם אופי אמיתי. גלול — והיא תתעורר.</p>
+        <div class="hint">גלול כדי להכיר אותה ▾</div>
       </div>
     </div>
 
-    <div class="caption" data-start="0.16" data-end="0.3">
+    <div class="caption" data-start="0.14" data-end="0.28">
       <div class="chip">
-        <span class="when">05:47 · עלות השחר</span>
-        <h2>האור הראשון</h2>
-        <p>השמש מטפסת מעל הרכס, והשמיים מחליפים סגול בכתום. המסע רק מתחיל.</p>
+        <span class="when" style="color:#4fd8ff">VOICE</span>
+        <h2>מדברים — היא עונה</h2>
+        <p>אומרים ״אלכס״ והיא מקשיבה. מבינה עברית ואנגלית, אפילו באותו משפט, ומתחילה לדבר תוך שנייה — משפט אחרי משפט, כמו שיחה אמיתית.</p>
       </div>
     </div>
 
-    <div class="caption" data-start="0.38" data-end="0.52">
+    <div class="caption" data-start="0.32" data-end="0.46">
       <div class="chip">
-        <span class="when">12:30 · צהריים</span>
-        <h2>שיא היום</h2>
-        <p>השמש בפסגה, השמיים כחולים ובהירים. שים לב איך ההרים הקרובים רצים מהר מהרחוקים.</p>
+        <span class="when" style="color:#a98bff">MIND</span>
+        <h2>מוח רב-מנועי</h2>
+        <p>נתב חכם בוחר מנוע AI, ואם אחד נופל — עוברת לבא בשקט. ויש לה זיכרון: היא לומדת אותך כל הזמן, ולא שוכחת.</p>
       </div>
     </div>
 
-    <div class="caption" data-start="0.6" data-end="0.74">
+    <div class="caption" data-start="0.5" data-end="0.64">
       <div class="chip">
-        <span class="when">18:52 · שקיעה</span>
-        <h2>שעת הזהב</h2>
-        <p>השמש צונחת אל האופק וצובעת הכל באדום. עוד רגע יעלו הכוכבים.</p>
+        <span class="when" style="color:#ffc46b">FINANCE</span>
+        <h2>שותפה לכספים</h2>
+        <p>דוחות הוצאות והכנסות על המסך, ניתוח תלוש חודשי ותובנות. וכל נתון רגיש? עולה למסך רק אחרי אישור בטלפון שלך.</p>
       </div>
     </div>
 
-    <div class="caption" data-start="0.82" data-end="0.96">
+    <div class="caption" data-start="0.68" data-end="0.8">
       <div class="chip">
-        <span class="when">23:10 · לילה</span>
-        <h2>שקט של כוכבים</h2>
-        <p>הירח תלוי מעל העמק, וההרים נחים. הגעת לסוף היום — ולסוף הדף.</p>
+        <span class="when" style="color:#4fe3b0">HOME</span>
+        <h2>הבית מקשיב לה</h2>
+        <p>אורות, מזגן, תריסים ומצלמות — הכל בקול או במסך מגע ביתי שה-orb במרכזו. אלכס יושבת מעל הכל כשכבה אחת חכמה.</p>
+      </div>
+    </div>
+
+    <div class="caption" data-start="0.84" data-end="0.97">
+      <div class="chip">
+        <span class="when" style="color:#ff86ae">SOUL</span>
+        <h2>לא בוט. חברה.</h2>
+        <p>שנונה, צינית בחיוך, חמה כשצריך. קוראת מצב רוח ועונה בהתאם: עובדה, פסיקה, פעולה — בלי בולשיט.</p>
       </div>
     </div>
   </div>
 </div>
 
 <section class="outro">
-  <h2>יום שלם בגלילה אחת</h2>
-  <p>כל מה שראית — שמש, ירח, כוכבים, ארבע שכבות הרים וצבעי שמיים משתנים — מחושב מאחוז הגלילה שלך בדף, בלי אף ספרייה חיצונית.</p>
-  <a class="again" href="#journey">עוד פעם מההתחלה</a>
-  <footer>מושן. — אתר דוגמה, קובץ HTML אחד.</footer>
+  <span class="tag">NORTH STAR</span>
+  <h2>אלכס בכל בית</h2>
+  <p>עוזרת אחת שמחברת הכל — קול, כסף, בית, מדיה — ועושה את זה ביחד, לא בנפרד. זה החזון, וזו רק ההתחלה.</p>
+  <a class="cta" href="#journey">להתעורר שוב</a>
+  <footer>אלכס. — living-light HUD · קובץ HTML אחד, גלילה אחת.</footer>
 </section>
 
 <script>
-  /* ---------- Scroll-driven hero engine ---------- */
+  /* ---------- Scroll-driven living-light orb ---------- */
   const lerp = (a, b, t) => a + (b - a) * t;
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
   const hex = c => [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
-  const mix = (c1, c2, t) => {
-    const a = hex(c1), b = hex(c2);
-    return `rgb(${Math.round(lerp(a[0], b[0], t))},${Math.round(lerp(a[1], b[1], t))},${Math.round(lerp(a[2], b[2], t))})`;
-  };
 
-  /* Time-of-day keyframes: dawn → day → sunset → night */
+  /* Chapter keyframes: orb color + behavior per scroll position */
   const KEYS = [
-    { p: 0.00, top: '#1b1440', mid: '#7d4a72', bot: '#f2976f', sun: '#ffd9a0', far: '#553d78', mid2: '#3a2a5e', near: '#241a44', fg: '#140e2c', stars: 0 },
-    { p: 0.40, top: '#2a6bb5', mid: '#7fb4e0', bot: '#cfe6f2', sun: '#fff3d6', far: '#6d8fb8', mid2: '#4a6b96', near: '#2e4668', fg: '#1d2f4a', stars: 0 },
-    { p: 0.68, top: '#3b1d4f', mid: '#c2504f', bot: '#ff9d5c', sun: '#ff9d54', far: '#5e3363', mid2: '#42224c', near: '#2a1436', fg: '#180b22', stars: 0.15 },
-    { p: 1.00, top: '#04070f', mid: '#0d1630', bot: '#1a2547', sun: '#e8ecff', far: '#141d3a', mid2: '#0d1428', near: '#070b18', fg: '#04060f', stars: 1 },
+    { p: 0.00, col: '#8fb4ff', scale: 1.00, ring: 0.15, sat: 0.0, jit: 0.5, label: 'LIVING-LIGHT' },
+    { p: 0.20, col: '#4fd8ff', scale: 1.06, ring: 1.00, sat: 0.0, jit: 0.85, label: 'VOICE' },
+    { p: 0.39, col: '#a98bff', scale: 0.96, ring: 0.10, sat: 1.0, jit: 0.40, label: 'MIND' },
+    { p: 0.57, col: '#ffc46b', scale: 0.90, ring: 0.25, sat: 0.35, jit: 0.30, label: 'FINANCE' },
+    { p: 0.74, col: '#4fe3b0', scale: 1.00, ring: 0.35, sat: 0.25, jit: 0.55, label: 'HOME' },
+    { p: 0.92, col: '#ff86ae', scale: 1.06, ring: 0.55, sat: 0.0, jit: 0.95, label: 'SOUL' },
+    { p: 1.00, col: '#b48cff', scale: 1.00, ring: 0.30, sat: 0.0, jit: 0.6, label: 'ALEX' },
   ];
   function sample(p) {
     let i = 0;
     while (i < KEYS.length - 2 && p > KEYS[i + 1].p) i++;
     const a = KEYS[i], b = KEYS[i + 1];
     const t = clamp((p - a.p) / (b.p - a.p), 0, 1);
-    const out = {};
-    for (const k in a) {
-      if (k === 'p') continue;
-      out[k] = typeof a[k] === 'number' ? lerp(a[k], b[k], t) : mix(a[k], b[k], t);
-    }
-    return out;
+    const ca = hex(a.col), cb = hex(b.col);
+    return {
+      col: [lerp(ca[0], cb[0], t), lerp(ca[1], cb[1], t), lerp(ca[2], cb[2], t)],
+      scale: lerp(a.scale, b.scale, t),
+      ring: lerp(a.ring, b.ring, t),
+      sat: lerp(a.sat, b.sat, t),
+      jit: lerp(a.jit, b.jit, t),
+      label: t < 0.5 ? a.label : b.label,
+    };
   }
 
-  /* ---------- Seamless tiling ridge masks (black silhouettes) ---------- */
-  const W = 1600, H = 1000;
-  function ridgeMask(baseY, amp, k1, k2, ph) {
-    let d = '';
-    const N = 96;
-    for (let i = 0; i <= N; i++) {
-      const x = (W / N) * i;
-      const y = baseY - amp * (0.62 * Math.abs(Math.sin(Math.PI * k1 * x / W + ph)) + 0.38 * (0.5 + 0.5 * Math.sin(2 * Math.PI * k2 * x / W)));
-      d += (i ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
-    }
-    d += ` L${W} ${H} L0 ${H} Z`;
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><path d="${d}" fill="#000"/></svg>`;
-    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  /* ---------- Canvas ---------- */
+  const cv = document.getElementById('orb');
+  const ctx = cv.getContext('2d');
+  const DPR = Math.min(devicePixelRatio || 1, 2);
+  let W = 0, H = 0;
+  function resize() {
+    W = innerWidth; H = innerHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   }
-  function treeMask(baseY) {
-    const n = 10, step = W / n;
-    let shapes = `<rect x="0" y="${baseY + 60}" width="${W}" height="${H - baseY - 60}"/>`;
-    for (let i = 0; i < n; i++) {
-      const x = step * i + step / 2;
-      const h = 150 + ((i * 73) % 3) * 60;
-      shapes += `<polygon points="${x},${baseY + 70 - h} ${x - 42},${baseY + 80} ${x + 42},${baseY + 80}"/>`;
-    }
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><g fill="#000">${shapes}</g></svg>`;
-    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-  }
-  function starField() {
-    let dots = '';
-    for (let i = 0; i < 130; i++) {
-      const x = (i * 137.5) % 100, y = ((i * 61.8) % 70);
-      const r = 0.6 + ((i * 29) % 10) / 9;
-      dots += `<circle cx="${x}%" cy="${y}%" r="${r.toFixed(1)}" opacity="${(0.35 + ((i * 17) % 10) / 15).toFixed(2)}"/>`;
-    }
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><g fill="#dfe6ff">${dots}</g></svg>`;
-    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-  }
+  resize();
+  addEventListener('resize', resize);
 
-  const layers = [
-    { el: document.getElementById('far'),  mask: ridgeMask(520, 300, 3, 2, 0.7), speed: 260,  color: 'far'  },
-    { el: document.getElementById('mid'),  mask: ridgeMask(660, 330, 4, 3, 2.1), speed: 560,  color: 'mid2' },
-    { el: document.getElementById('near'), mask: ridgeMask(790, 290, 5, 2, 4.4), speed: 980,  color: 'near' },
-    { el: document.getElementById('fg'),   mask: treeMask(860),                  speed: 1500, color: 'fg'   },
-  ];
-  layers.forEach(l => {
-    l.el.style.webkitMaskImage = l.mask;
-    l.el.style.maskImage = l.mask;
-  });
-  const stars = document.getElementById('stars');
-  stars.style.backgroundImage = starField();
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ---------- Captions ---------- */
+  /* particles on a disc */
+  const P = [];
+  for (let i = 0; i < 240; i++) {
+    P.push({
+      a: Math.random() * Math.PI * 2,
+      r: Math.sqrt(Math.random()),
+      ph: Math.random() * Math.PI * 2,
+      sp: 0.35 + Math.random() * 0.75,
+      sz: 0.7 + Math.random() * 1.7,
+      drift: (Math.random() - 0.5) * 0.12,
+    });
+  }
+  /* background motes */
+  const M = [];
+  for (let i = 0; i < 46; i++) {
+    M.push({ x: Math.random(), y: Math.random(), sz: 0.5 + Math.random() * 1.3, sp: 0.15 + Math.random() * 0.5 });
+  }
+  /* voice rings */
+  let rings = [], lastRing = 0;
+
   const captions = [...document.querySelectorAll('.caption')].map(el => ({
-    el,
-    start: parseFloat(el.dataset.start),
-    end: parseFloat(el.dataset.end),
+    el, start: parseFloat(el.dataset.start), end: parseFloat(el.dataset.end),
   }));
-
-  /* ---------- Per-frame update ---------- */
   const journey = document.getElementById('journey');
-  const sky = document.getElementById('sky');
-  const sun = document.getElementById('sun');
-  const moon = document.getElementById('moon');
   const bar = document.getElementById('bar');
-  const clock = document.getElementById('clock');
-  let lastP = -1;
+  const mode = document.getElementById('mode');
+  let lastLabel = '';
 
-  function frame() {
+  /* smoothed orb state */
+  const cur = { col: [143, 180, 255], scale: 1, ring: 0.15, sat: 0, jit: 0.5 };
+
+  function frame(t) {
     const max = journey.offsetHeight - innerHeight;
     const p = clamp((scrollY - journey.offsetTop) / max, 0, 1);
-    if (Math.abs(p - lastP) > 0.0004) {
-      lastP = p;
-      const s = sample(p);
+    const s = sample(p);
 
-      sky.style.background = `linear-gradient(to bottom, ${s.top} 0%, ${s.mid} 55%, ${s.bot} 100%)`;
-      stars.style.opacity = s.stars;
+    /* ease toward chapter targets */
+    const k = 0.07;
+    for (let i = 0; i < 3; i++) cur.col[i] = lerp(cur.col[i], s.col[i], k);
+    cur.scale = lerp(cur.scale, s.scale, k);
+    cur.ring = lerp(cur.ring, s.ring, k);
+    cur.sat = lerp(cur.sat, s.sat, k);
+    cur.jit = lerp(cur.jit, s.jit, k);
 
-      /* Sun: rises, crosses the sky, sets (done by p≈0.78) */
-      const sp = clamp(p / 0.78, 0, 1);
-      sun.style.insetInlineStart = lerp(12, 88, sp) + '%';
-      sun.style.top = (74 - Math.sin(sp * Math.PI) * 52) + '%';
-      sun.style.background = s.sun;
-      sun.style.setProperty('--sc', s.sun);
-      sun.style.opacity = p < 0.78 ? 1 : clamp(1 - (p - 0.78) / 0.06, 0, 1);
+    const [r, g, b] = cur.col.map(Math.round);
+    const col = a => `rgba(${r},${g},${b},${a})`;
 
-      /* Moon: rises after sunset */
-      const mp = clamp((p - 0.74) / 0.26, 0, 1);
-      moon.style.opacity = mp;
-      moon.style.insetInlineStart = lerp(55, 72, mp) + '%';
-      moon.style.top = lerp(50, 16, mp) + '%';
-      moon.style.background = '#e8ecff';
+    const cx = W / 2, cy = H * 0.4;
+    const R = Math.min(W, H) * 0.155 * cur.scale;
+    const T = t / 1000;
 
-      /* Parallax ridges: each layer runs at its own speed */
-      layers.forEach(l => {
-        const x = (p * l.speed).toFixed(1) + 'px';
-        l.el.style.webkitMaskPosition = x + ' 0';
-        l.el.style.maskPosition = x + ' 0';
-        l.el.style.backgroundColor = s[l.color];
-      });
+    ctx.clearRect(0, 0, W, H);
 
-      /* Captions fade in/out over their scroll range */
-      captions.forEach(c => {
-        const fade = 0.045;
-        const o = clamp((p - c.start) / fade, 0, 1) * clamp((c.end - p) / fade, 0, 1);
-        c.el.style.opacity = o;
-        c.el.style.transform = `translateY(${(1 - o) * 26}px)`;
-      });
+    /* background motes drift up slowly, tinted by chapter */
+    ctx.globalCompositeOperation = 'source-over';
+    M.forEach(m => {
+      const y = ((m.y - T * 0.008 * m.sp + p * 0.25) % 1 + 1) % 1;
+      ctx.fillStyle = col(0.16 * m.sp);
+      ctx.beginPath();
+      ctx.arc(m.x * W, y * H, m.sz, 0, 7);
+      ctx.fill();
+    });
 
-      /* Progress bar + clock (05:40 → 23:30) */
-      bar.style.transform = `scaleX(${p})`;
-      const mins = 340 + p * (1410 - 340);
-      const hh = String(Math.floor(mins / 60)).padStart(2, '0');
-      const mm = String(Math.floor(mins % 60)).padStart(2, '0');
-      clock.textContent = `${hh}:${mm}`;
+    ctx.globalCompositeOperation = 'lighter';
+
+    /* core glow */
+    let gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 2.4);
+    gr.addColorStop(0, col(0.5));
+    gr.addColorStop(0.35, col(0.16));
+    gr.addColorStop(1, col(0));
+    ctx.fillStyle = gr;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 2.4, 0, 7);
+    ctx.fill();
+
+    /* particle cloud */
+    const jit = reduced ? 0.15 : cur.jit;
+    P.forEach(pt => {
+      const ang = pt.a + T * 0.12 * pt.sp + pt.drift * T;
+      const wob = Math.sin(T * pt.sp * 2 + pt.ph) * 8 * jit;
+      const rad = pt.r * R + wob;
+      const x = cx + Math.cos(ang) * rad;
+      const y = cy + Math.sin(ang) * rad * 0.92;
+      const a = 0.25 + 0.55 * (1 - pt.r);
+      ctx.fillStyle = col(a);
+      ctx.beginPath();
+      ctx.arc(x, y, pt.sz, 0, 7);
+      ctx.fill();
+    });
+
+    /* voice rings — pulse outward when the chapter calls for it */
+    if (!reduced && cur.ring > 0.3 && t - lastRing > 1400 - cur.ring * 800) {
+      rings.push({ r: R * 1.05, a: 0.5 * cur.ring });
+      lastRing = t;
     }
+    rings = rings.filter(rg => rg.a > 0.01);
+    rings.forEach(rg => {
+      rg.r += Math.min(W, H) * 0.0035;
+      rg.a *= 0.965;
+      ctx.strokeStyle = col(rg.a);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rg.r, 0, 7);
+      ctx.stroke();
+    });
+
+    /* engine satellites — orbiting minds */
+    if (cur.sat > 0.05) {
+      for (let i = 0; i < 4; i++) {
+        const ang = T * (0.5 + i * 0.13) + (i * Math.PI) / 2;
+        const x = cx + Math.cos(ang) * R * 1.75;
+        const y = cy + Math.sin(ang) * R * 1.05;
+        ctx.fillStyle = col(0.85 * cur.sat);
+        ctx.beginPath();
+        ctx.arc(x, y, 2.6, 0, 7);
+        ctx.fill();
+        ctx.strokeStyle = col(0.12 * cur.sat);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, R * 1.75, R * 1.05, 0, 0, 7);
+        ctx.stroke();
+      }
+    }
+
+    /* captions + chrome */
+    captions.forEach(c => {
+      const fade = 0.04;
+      const o = clamp((p - c.start) / fade, 0, 1) * clamp((c.end - p) / fade, 0, 1);
+      c.el.style.opacity = o;
+      c.el.style.transform = `translateY(${(1 - o) * 24}px)`;
+    });
+    bar.style.transform = `scaleX(${p})`;
+    if (s.label !== lastLabel) {
+      lastLabel = s.label;
+      mode.textContent = s.label;
+    }
+    mode.style.color = `rgb(${r},${g},${b})`;
+
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
