@@ -189,7 +189,7 @@
   .packet {
     position: absolute; inset-inline-start: 13px; top: 0; width: 10px; height: 10px; border-radius: 50%;
     background: var(--c); box-shadow: 0 0 18px 4px var(--c); opacity: 0;
-    transform: translateY(var(--py, 0px)); z-index: 2; pointer-events: none;
+    transform: translate(var(--px, 0px), var(--py, 0px)); z-index: 2; pointer-events: none;
   }
   .packet.on { opacity: .95; }
   .node { display: grid; grid-template-columns: 36px 1fr; gap: 12px; padding-bottom: 20px; position: relative; }
@@ -342,15 +342,19 @@
   .deny { border: 1px solid var(--ink); background: none; border-radius: 12px; min-height: 50px; padding: 0 16px; font-size: .8rem; color: var(--muted); cursor: pointer; }
   .dash { margin-top: 18px; position: relative; }
   .dash .wm { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 2; }
-  .dash .wm span { font-size: 1.1rem; font-weight: 800; letter-spacing: .4em; color: rgba(255,255,255,.09); transform: rotate(-16deg); direction: ltr; }
+  .dash .wm span { font-size: 1.4rem; font-weight: 800; letter-spacing: .38em; color: rgba(255,255,255,.07); transform: rotate(-14deg); direction: ltr; white-space: nowrap; }
   .mrow { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--ink); }
   .mrow .lbl { font-size: .82rem; color: var(--muted); }
   .mrow .val { font-weight: 800; direction: ltr; font-variant-numeric: tabular-nums; position: relative; }
   .mrow .val.sealed { color: transparent; }
-  .mrow .val.sealed::after { content: ""; position: absolute; inset: -2px -4px; background: rgba(255,196,107,.2); border-radius: 4px; }
+  .mrow .val.sealed { min-width: 74px; display: inline-block; }
+  .mrow .val.sealed::after {
+    content: ""; position: absolute; inset: -3px -5px; border-radius: 4px;
+    background: repeating-linear-gradient(90deg, rgba(255,196,107,.3) 0 7px, rgba(255,196,107,.13) 7px 14px);
+  }
   .bars { display: flex; align-items: flex-end; gap: 6px; height: 90px; margin-top: 16px; }
   .bars i { flex: 1; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, #ffc46b, rgba(255,196,107,.2)); height: 6%; transition: height 1s cubic-bezier(.2,.7,.2,1); }
-  .locked { text-align: center; font-size: .74rem; color: var(--dim); padding: 22px 0; }
+  .locked { font-size: .74rem; color: #ffc46b; padding: 0 0 14px; }
 
   /* ---- team ---- */
   .agents { display: grid; gap: 10px; margin-top: 24px; grid-template-columns: 1fr 1fr; }
@@ -433,9 +437,64 @@
   .legend .badge { margin-inline-end: 6px; }
   footer { margin-top: 40px; color: var(--dim); font-size: .7rem; }
 
+  /* ============ desktop: a real two-column composition, not a stretched phone ============ */
+  @media (min-width: 1024px) {
+    header { padding: 16px 32px; padding-top: calc(16px + env(safe-area-inset-top)); }
+    .logo { font-size: 1.25rem; }
+
+    /* hero: the caption holds the inline-start half, the orb lives in the other */
+    .caption {
+      bottom: auto; top: 0; height: 100svh;
+      place-items: center start;
+      padding-inline: max(40px, calc((100vw - 1240px) / 2)) 0;
+    }
+    .caption .in2 { text-align: start; max-width: 460px; }
+    .caption h2 { font-size: clamp(2.1rem, 2.9vw, 3.1rem); }
+    .caption p { margin-inline: 0; font-size: 1.02rem; max-width: 420px; }
+    .caption.op { place-items: center start; padding-bottom: 0; }
+    .caption.op h1 { font-size: clamp(5rem, 8vw, 8.5rem); }
+    .caption.op p { max-width: 430px; font-size: 1.1rem; }
+    .anno div { inset-inline-start: 72%; }
+    .anno .a1 { top: 12%; } .anno .a2 { top: 20%; } .anno .a3 { top: 80%; }
+    .rail { inset-inline-end: max(12px, calc((100vw - 1300px) / 2)); }
+
+    /* sections: actually use the width */
+    .wrap { max-width: 1040px; }
+    .sec { padding: 124px 32px 132px; scroll-margin-top: 0; }
+    .sec h2 { font-size: clamp(2.2rem, 3vw, 3rem); }
+    .lede { font-size: 1.08rem; max-width: 620px; }
+    .sub { margin-top: 56px; }
+    .flow { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(5, auto);
+            grid-auto-flow: column; column-gap: 44px; }
+    .flow::before { inset-inline-start: 17px; }
+    .flow::after {
+      content: ""; position: absolute; inset-block: 12px; inset-inline-start: calc(50% + 39px); width: 2px;
+      background: linear-gradient(180deg, var(--c), rgba(255,255,255,.06));
+      transform: scaleY(var(--ink-p, 0)); transform-origin: top; transition: transform 1.6s ease-out .3s;
+    }
+    .node { padding-bottom: 26px; }
+    .node > div { max-width: 460px; }
+    .house-2, .money-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; align-items: start; }
+    .grid56 { grid-template-columns: repeat(3, 1fr); }
+    .stats { grid-template-columns: repeat(4, 1fr); }
+    .tri { gap: 18px; }
+    .plan { max-width: 620px; }
+    .remote, .phone { max-width: 460px; margin-inline: 0; }
+    .dash { max-width: 640px; }
+    .deck { min-height: 380px; }
+    .ribbon { height: 168px; }
+    .ledger td.l, .matrix td { font-size: .84rem; }
+    .outro { padding: 150px 32px 90px; }
+    .outro h2 { font-size: clamp(2.6rem, 4vw, 3.6rem); }
+  }
+  @media (min-width: 1400px) {
+    .wrap { max-width: 1160px; }
+    .caption .in2 { max-width: 520px; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    .caption.op .hint, .grain, .cap.in .scan { animation: none; }
+    .caption.op .hint, .cap.in .scan { animation: none; }
     .rev { transition-duration: .01s; }
   }
   html[data-motion="still"] .grain { animation: none; }
@@ -739,6 +798,8 @@
     <h2 class="rev" style="--d:.05s" data-en="The house, room by room" data-he="הבית, חדר אחר חדר">The house, room by room</h2>
     <p class="lede rev" style="--d:.1s" data-en="A tablet on the wall, her orb in the middle of it, and every device in the house behind one screen. Tap a room to isolate it." data-he="טאבלט על הקיר, האורב שלה במרכזו, וכל מכשיר בבית מאחורי מסך אחד. גע בחדר כדי לבודד אותו.">A tablet on the wall, her orb in the middle of it, and every device in the house behind one screen. Tap a room to isolate it.</p>
 
+    <div class="house-2">
+      <div>
     <div class="plan rev" id="plan" style="--d:.15s">
       <button class="room" data-r="0"><span class="g">◼</span><b data-en="Living room" data-he="סלון">Living room</b></button>
       <button class="room" data-r="1"><span class="g">◻</span><b data-en="Kitchen" data-he="מטבח">Kitchen</b></button>
@@ -765,7 +826,9 @@
       <button class="btn" id="allon" data-ripple data-en="Wake the house" data-he="להעיר את הבית">Wake the house</button>
     </div>
 
-    <div class="sub" data-en="A REAL AC REMOTE — NOT A TOGGLE" data-he="שלט מזגן אמיתי — לא מתג">A REAL AC REMOTE — NOT A TOGGLE</div>
+      </div>
+      <div>
+    <div class="sub" style="margin-top:0" data-en="A REAL AC REMOTE — NOT A TOGGLE" data-he="שלט מזגן אמיתי — לא מתג">A REAL AC REMOTE — NOT A TOGGLE</div>
     <div class="remote rev">
       <div class="temp num" id="acTemp">22<small>°</small></div>
       <div class="grid">
@@ -788,6 +851,8 @@
       </div>
     </div>
 
+      </div>
+    </div>
     <div class="sub" data-en="ONBOARDING A UNIT SHE'S NEVER SEEN" data-he="חיבור יחידה שהיא לא מכירה">ONBOARDING A UNIT SHE'S NEVER SEEN</div>
     <ol class="steps rev">
       <li data-en="Type a brand." data-he="הקלד מותג.">Type a brand.</li>
@@ -910,6 +975,8 @@
     <h2 class="rev" style="--d:.05s" data-en="The money desk" data-he="שולחן הכספים">The money desk</h2>
     <p class="lede rev" style="--d:.1s" data-en="She talks about your money out loud. She never says a number out loud. Every figure waits behind one deliberate approval — hold the button and watch what unlocks." data-he="היא מדברת על הכסף שלך בקול. היא לא אומרת מספר בקול. כל סכום ממתין לאישור אחד מכוון — החזק את הכפתור ותראה מה נפתח.">She talks about your money out loud. She never says a number out loud. Every figure waits behind one deliberate approval — hold the button and watch what unlocks.</p>
 
+    <div class="money-2">
+      <div>
     <div class="phone rev" style="--d:.15s">
       <div class="notch"></div>
       <div class="req">
@@ -925,10 +992,12 @@
       </div>
     </div>
 
+      </div>
+      <div>
     <div class="dash rev" id="dash" style="--d:.2s">
       <div class="wm"><span>SAMPLE · דוגמה</span></div>
       <div id="lockedMsg" class="locked" data-en="Sealed. Nothing is shown until you approve." data-he="חתום. שום דבר לא מוצג עד שתאשר.">Sealed. Nothing is shown until you approve.</div>
-      <div id="dashBody" class="hide">
+      <div id="dashBody">
         <div class="mrow"><span class="lbl" data-en="This month, total" data-he="סך החודש">This month, total</span><span class="val num" data-v="4820">— — —</span></div>
         <div class="mrow"><span class="lbl" data-en="Versus last month" data-he="מול החודש שעבר">Versus last month</span><span class="val num" data-v="-312">— — —</span></div>
         <div class="mrow"><span class="lbl" data-en="Largest merchant" data-he="הספק הגדול">Largest merchant</span><span class="val num" data-v="960">— — —</span></div>
@@ -938,6 +1007,8 @@
       </div>
     </div>
 
+      </div>
+    </div>
     <div class="sub" data-en="THE OUTGOING GUARD" data-he="שומר היציאה">THE OUTGOING GUARD</div>
     <div class="card rev">
       <p data-en="Spoken and chat replies stay deliberately neutral. Figures live only in the emailed report or the approved card, and a dedicated guard reads every outgoing reply and suppresses anything that pairs money language with an amount." data-he="תשובות בקול ובצ׳אט נשארות ניטרליות בכוונה. סכומים קיימים רק בדוח שנשלח במייל או בכרטיס שאושר, ושומר מיוחד קורא כל תשובה יוצאת וחוסם כל דבר שמצמיד שפה של כסף לסכום.">Spoken and chat replies stay deliberately neutral. Figures live only in the emailed report or the approved card, and a dedicated guard reads every outgoing reply and suppresses anything that pairs money language with an amount.</p>
@@ -1422,7 +1493,7 @@ let tokens = [], deadEdge = -1, deadT = 0;
 for (let i = 0; i < 8; i++) tokens.push({ e: i * 3 + 1, t: RA() });
 
 /* ================= main hero frame ================= */
-let lastTel = '', lastLbl = '', lastSeg = -1, lastAnno = '';
+let lastLbl = '', lastSeg = -1, lastAnno = '', lastLb = -1;
 const ANNO = {
   GALAXY:     { se: 'golden-angle spiral disc', sh: 'דיסק ספירלי בזווית הזהב', fe: 'three depth planes, sorted once', fh: 'שלושה מישורי עומק, ממוינים פעם אחת' },
   VOICE:      { se: 'four interleaved waveform strands', sh: 'ארבעה גדילי גל שזורים', fe: 'speech envelope — bursts, then pauses', fh: 'מעטפת דיבור — פרצים, ואז שקט' },
@@ -1463,14 +1534,18 @@ function frame(t, dt) {
   }
 
   /* letterbox: cold open + closing */
-  const lbP = ST ? 0 : bt < 1.1 ? 1 : bt < 2.1 ? 1 - (bt - 1.1) : 0;
-  const closeP = heroIn ? clamp((p - .965) / .035, 0, 1) * .55 : 0;
-  const lbShow = Math.max(lbP, closeP);
-  $('#lbt').style.transform = 'translateY(' + (-100 + lbShow * 100) + '%)';
-  $('#lbb').style.transform = 'translateY(' + (100 - lbShow * 100) + '%)';
+  /* cold open only — a closing letterbox would bleed into the sections below */
+  const lbShow = ST ? 0 : bt < 1.1 ? 1 : bt < 2.1 ? 1 - (bt - 1.1) : 0;
+  if (lbShow !== lastLb) {
+    lastLb = lbShow;
+    $('#lbt').style.transform = 'translateY(' + (-100 + lbShow * 100) + '%)';
+    $('#lbb').style.transform = 'translateY(' + (100 - lbShow * 100) + '%)';
+  }
 
-  const cx = W / 2, cy = H * .4;
-  let R = Math.min(W, H) * .2;
+  const wide = W >= 1024;
+  const cx = W / 2 + (wide ? W * .19 * DIRSIGN : 0);
+  const cy = H * (wide ? .48 : .4);
+  let R = wide ? Math.min(W * .45, H * .8) * .42 : Math.min(W, H) * .2;
   if (s.a.sh === 8 || s.b.sh === 8) R *= 1 + .05 * Math.sin(T * 2.6);
 
   /* camera */
@@ -1495,7 +1570,7 @@ function frame(t, dt) {
       const pz = st.z;
       st.z -= warp * .016 * (ST ? .25 : 1);
       if (st.z <= .05) { st.x = (RA() - .5) * 2; st.y = (RA() - .5) * 2; st.z = 1; continue; }
-      const kk = Math.min(W, H) * .5 * cam.z * .6;
+      const kk = Math.min(W, H) * .5 * cam.z * (wide ? .85 : .6);
       const a = (1 - st.z) * .3;
       ctx.strokeStyle = 'rgba(190,205,255,' + a + ')';
       ctx.lineWidth = (1 - st.z) * 2;
@@ -1731,9 +1806,10 @@ const flowNodes = $$('#flow .node');
 let flowVis = false, pkT = 0, pkStops = [];
 function measureStops() {
   const fr = flow.getBoundingClientRect();
+  const base = flowNodes[0].querySelector('.dot').getBoundingClientRect();
   pkStops = flowNodes.map(n => {
     const d = n.querySelector('.dot').getBoundingClientRect();
-    return d.top - fr.top + d.height / 2 - 5;
+    return { y: d.top - fr.top + d.height / 2 - 5, x: (d.left - base.left) * DIRSIGN };
   });
 }
 new IntersectionObserver(es => {
@@ -1743,7 +1819,7 @@ new IntersectionObserver(es => {
   flowNodes.forEach((n, i) => setTimeout(() => n.classList.add('hot'), 120 + i * 110));
   measureStops();
 }, { threshold: .1 }).observe(flow);
-addEventListener('resize', () => { if (flowVis) measureStops(); });
+addEventListener('resize', () => { if (flowVis) setTimeout(measureStops, 200); });
 /* one packet runs the happy path on a loop */
 reg((t, dt) => {
   if (!flowVis || still() || !pkStops.length) { packet.classList.remove('on'); return; }
@@ -1753,8 +1829,11 @@ reg((t, dt) => {
   packet.classList.add('on');
   const f = u / .93 * (pkStops.length - 1);
   const i = Math.min(Math.floor(f), pkStops.length - 2);
-  const y = lerp(pkStops[i], pkStops[i + 1], smooth(f - i));
-  packet.style.setProperty('--py', y.toFixed(1) + 'px');
+  const k = smooth(f - i), a = pkStops[i], b = pkStops[i + 1];
+  /* a column break moves sideways instantly rather than cutting across the gap */
+  const jump = Math.abs(b.x - a.x) > 4;
+  packet.style.setProperty('--py', lerp(a.y, b.y, jump ? (k > .5 ? 1 : 0) : k).toFixed(1) + 'px');
+  packet.style.setProperty('--px', lerp(a.x, b.x, jump ? (k > .5 ? 1 : 0) : k).toFixed(1) + 'px');
 });
 
 let engDead = false;
@@ -1979,7 +2058,6 @@ function approve() {
   hold.style.setProperty('--p', 1);
   $('#holdTxt').textContent = LANG === 'he' ? 'אושר ✓' : 'APPROVED ✓';
   lockedMsg.classList.add('hide');
-  dashBody.classList.remove('hide');
   $$('#dashBody .val').forEach(v => v.classList.remove('sealed'));
   countUp();
   pulse('#ffc46b', true);
@@ -1990,8 +2068,8 @@ function relock() {
   unlocked = false; hp = 0;
   hold.style.setProperty('--p', 0);
   $('#holdTxt').textContent = LANG === 'he' ? 'החזק לאישור' : 'HOLD TO APPROVE';
-  dashBody.classList.add('hide');
   lockedMsg.classList.remove('hide');
+  mbars.forEach(bb => { bb.style.height = '6%'; });
   lockedMsg.textContent = LANG === 'he' ? 'נחתם מחדש. שום דבר לא מוצג עד שתאשר.' : 'Re-sealed. Nothing is shown until you approve.';
   $$('#dashBody .val').forEach(v => { v.classList.add('sealed'); v.textContent = '— — —'; });
   if (cntJob) { unreg(cntJob); cntJob = null; }
