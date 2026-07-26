@@ -38,10 +38,9 @@
   .lb.t { top: 0; } .lb.b { bottom: 0; }
 
   /* ============ chrome ============ */
-  .prog { position: fixed; top: 0; inset-inline: 0; height: 3px; z-index: 60; display: flex; gap: 2px; padding: 0 2px; }
-  .prog i { flex: 1; background: rgba(255,255,255,.1); position: relative; overflow: hidden; }
-  .prog i::after { content:""; position: absolute; inset: 0; background: var(--c); transform: scaleX(var(--f,0)); transform-origin: left; }
-  html[dir="rtl"] .prog i::after { transform-origin: right; }
+  .prog { position: fixed; top: 0; inset-inline: 0; height: 2px; z-index: 60; background: rgba(255,255,255,.07); }
+  .prog i { display: block; height: 100%; background: var(--c); opacity: .8; transform: scaleX(var(--f,0)); transform-origin: left; }
+  html[dir="rtl"] .prog i { transform-origin: right; }
   .topscrim {
     position: fixed; inset-inline: 0; top: 0; height: calc(78px + env(safe-area-inset-top));
     z-index: 54; pointer-events: none;
@@ -65,12 +64,6 @@
   button.pill { pointer-events: auto; cursor: pointer; color: var(--text); letter-spacing: .08em; }
   button.pill:active { transform: scale(.94); }
 
-  .grain {
-    position: fixed; inset: 0; z-index: 52; pointer-events: none; opacity: .06;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
-    animation: grain 1.1s steps(4) infinite;
-  }
-  @keyframes grain { 0%{background-position:0 0} 25%{background-position:-7px 11px} 50%{background-position:11px -7px} 75%{background-position:-11px -11px} 100%{background-position:7px 7px} }
 
   .wipe { position: fixed; inset: 0; z-index: 58; background: #070a16; transform: scaleX(0); transform-origin: left; pointer-events: none; }
   html[dir="rtl"] .wipe { transform-origin: right; }
@@ -85,24 +78,11 @@
 
   .rail { position: absolute; inset-inline-end: 6px; top: 50%; transform: translateY(-50%); z-index: 6; display: grid; gap: 2px; }
   .rail button {
-    width: 40px; height: 34px; background: none; border: 0; display: grid; place-items: center; cursor: pointer;
+    width: 30px; height: 30px; background: none; border: 0; display: grid; place-items: center; cursor: pointer;
   }
-  .rail i { display: block; width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.22); transition: background .3s, transform .3s, box-shadow .3s; }
-  .rail button[aria-current="true"] i { background: var(--c); transform: scale(1.5); box-shadow: 0 0 14px var(--c); }
+  .rail i { display: block; width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,.16); transition: background .3s, transform .3s; }
+  .rail button[aria-current="true"] i { background: var(--c); transform: scale(1.8); }
 
-  .tel {
-    position: absolute; inset-inline-start: 16px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 6;
-    font-size: .58rem; letter-spacing: .1em; color: var(--dim); direction: ltr; text-align: start;
-    line-height: 1.7; font-variant-numeric: tabular-nums; pointer-events: none;
-  }
-  .tel b { color: var(--c); font-weight: 700; }
-
-  .listen {
-    position: absolute; inset-inline: 0; top: 14svh; z-index: 6; display: grid; place-items: center;
-    opacity: 0; transition: opacity .5s; pointer-events: none;
-  }
-  .listen.on { opacity: 1; }
-  .listen span { font-size: .6rem; letter-spacing: .3em; color: var(--c); border: 1px solid var(--ink); border-radius: 999px; padding: 6px 14px; background: rgba(8,10,22,.5); }
 
   .caption {
     position: absolute; inset-inline: 0; bottom: 9svh; display: grid; place-items: center; padding: 0 22px;
@@ -111,10 +91,8 @@
   .caption .in2 { text-align: center; max-width: 540px; }
   .caption .kick { font-weight: 800; font-size: .7rem; letter-spacing: .34em; direction: ltr; color: var(--c); text-shadow: 0 0 24px var(--c); }
   .caption h2 {
-    font-size: clamp(1.7rem, 7.4vw, 2.7rem); font-weight: 800; line-height: 1.12; margin-top: 10px; text-wrap: balance;
-    background: linear-gradient(160deg, #fff 32%, var(--c) 112%);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-    filter: drop-shadow(0 4px 26px rgba(0,0,0,.75));
+    font-size: clamp(1.7rem, 7.4vw, 2.7rem); font-weight: 800; line-height: 1.14; margin-top: 10px; text-wrap: balance;
+    color: var(--text); text-shadow: 0 3px 26px rgba(0,0,0,.85);
   }
   .caption p { color: var(--muted); line-height: 1.68; margin-top: 12px; font-size: .94rem; max-width: 430px; margin-inline: auto; text-shadow: 0 1px 12px rgba(0,0,0,.9); }
   .caption .tapme { margin-top: 14px; font-size: .62rem; letter-spacing: .2em; color: var(--dim); }
@@ -129,8 +107,6 @@
   .caption.op p { margin-top: 12px; font-size: 1.02rem; }
   .caption.op .hint { margin-top: 26px; font-size: .72rem; letter-spacing: .18em; color: var(--muted); animation: bob 1.8s ease-in-out infinite; }
   @keyframes bob { 0%,100%{transform:translateY(0);opacity:.5} 50%{transform:translateY(10px);opacity:1} }
-  .skip { position: absolute; inset-inline: 0; bottom: calc(52px + env(safe-area-inset-bottom)); z-index: 7; display: grid; place-items: center; opacity: 0; transition: opacity .6s; pointer-events: none; }
-  .skip.on { opacity: 1; pointer-events: auto; }
 
   .echo {
     position: absolute; inset-inline: 0; top: 26svh; z-index: 7; display: grid; place-items: center;
@@ -160,11 +136,11 @@
   .wrap { max-width: 760px; margin-inline: auto; }
   .kicker { font-size: .64rem; font-weight: 800; letter-spacing: .3em; color: var(--c); direction: ltr; display: inline-block; }
   .sec h2 {
-    font-size: clamp(1.9rem, 8vw, 2.9rem); font-weight: 800; line-height: 1.1; margin-top: 10px; text-wrap: balance;
-    background: linear-gradient(150deg, #fff 34%, var(--c) 116%);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+    font-size: clamp(1.7rem, 7vw, 2.4rem); font-weight: 800; line-height: 1.14; margin-top: 10px; text-wrap: balance;
+    color: var(--text);
   }
   .lede { color: var(--muted); line-height: 1.75; margin-top: 14px; font-size: 1rem; max-width: 560px; }
+  .demo-note { font-size: .68rem; color: var(--dim); margin-top: 18px; line-height: 1.6; }
   .sub { font-size: .78rem; font-weight: 800; letter-spacing: .2em; color: var(--dim); margin: 40px 0 14px; direction: ltr; }
   html[dir="rtl"] .sub { direction: rtl; letter-spacing: 0; }
 
@@ -471,14 +447,12 @@
 <div class="lb t" id="lbt"></div>
 <div class="lb b" id="lbb"></div>
 <div class="wipe" id="wipe"></div>
-<div class="grain" aria-hidden="true"></div>
 
-<div class="prog" id="prog"></div>
+<div class="prog"><i id="bar"></i></div>
 <div class="topscrim" aria-hidden="true"></div>
 <header>
   <div class="logo" data-enh="Alex<span>.</span>" data-heh="אלכס<span>.</span>">Alex<span>.</span></div>
   <div class="cend">
-    <button class="pill" id="motion" data-ripple title="motion">AUTO</button>
     <button class="pill" id="lang" data-ripple>עברית</button>
     <div class="pill" id="mode">LIVING-LIGHT</div>
   </div>
@@ -487,10 +461,7 @@
 <div class="journey" id="journey">
   <div class="stage" id="stage">
     <nav class="rail" id="rail" aria-label="chapters"></nav>
-    <div class="tel" id="tel"></div>
-    <div class="listen" id="listenChip"><span data-en="LISTENING" data-he="מקשיבה">LISTENING</span></div>
     <div class="echo" id="echoChip"><span data-en="ECHO GUARD · CUT OFF" data-he="נקטעה · מגן הד">ECHO GUARD · CUT OFF</span></div>
-    <div class="skip" id="skip"><button class="pill" data-ripple data-en="SKIP THE INTRO" data-he="לדלג על הפתיחה">SKIP THE INTRO</button></div>
     <div class="anno" id="anno" aria-hidden="true">
       <div class="a1"><b>SHAPE</b><span id="anShape"></span></div>
       <div class="a2"><b>FIELD</b><span id="anField"></span></div>
@@ -503,7 +474,6 @@
         <h1 data-en="Alex." data-he="אלכס.">Alex.</h1>
         <p data-en="Not an app. One being of light that hears you, knows which of you is talking, and runs the house." data-he="לא אפליקציה. ישות אחת של אור ששומעת אותך, יודעת מי מדבר, ומנהלת את הבית.">Not an app. One being of light that hears you, knows which of you is talking, and runs the house.</p>
         <div class="hint" data-en="Scroll — nine chapters, one being ▾" data-he="גלול — תשעה פרקים, ישות אחת ▾">Scroll — nine chapters, one being ▾</div>
-        <div class="tapme" style="margin-top:16px" data-en="PRESS AND HOLD ANYWHERE TO INSPECT" data-he="לחיצה ארוכה בכל מקום כדי לבדוק">PRESS AND HOLD ANYWHERE TO INSPECT</div>
       </div>
     </div>
 
@@ -586,10 +556,10 @@
       <div class="stat"><b class="ltr">18</b><span data-en="AI engines in the chain" data-he="מנועי AI בשרשרת">AI engines in the chain</span></div>
     </div>
 
+    <p class="demo-note" data-en="The two buttons below are a demonstration on this page, not a live system." data-he="שני הכפתורים שלמטה הם הדגמה בדף הזה, לא מערכת חיה.">The two buttons below are a demonstration on this page, not a live system.</p>
     <div class="row-btns rev" style="--d:.2s">
       <button class="btn" id="killEngine" data-ripple data-en="Kill an engine" data-he="להפיל מנוע">Kill an engine</button>
       <button class="btn" id="killNet" data-ripple data-en="Cut the network" data-he="לנתק את הרשת">Cut the network</button>
-      <span class="badge i" data-en="ILLUSTRATION" data-he="הדגמה">ILLUSTRATION</span>
     </div>
 
     <div class="flow rev" id="flow" style="--d:.25s">
@@ -741,10 +711,8 @@
       <em style="font-style:normal;font-size:.66rem;color:var(--dim);display:block;margin-top:8px" data-en="Same sentence, correct conjugation. This is the actual thing she gets right." data-he="אותו משפט, הטיה נכונה. זה בדיוק מה שהיא עושה נכון.">Same sentence, correct conjugation. This is the actual thing she gets right.</em>
     </div>
 
-    <div class="sub" data-en="HOW IT WORKS" data-he="איך זה עובד">HOW IT WORKS</div>
     <div class="stats rev">
       <div class="stat"><b class="ltr">512</b><span data-en="dimensions per voiceprint" data-he="מידות בטביעת קול">dimensions per voiceprint</span></div>
-      <div class="stat"><b class="ltr">44.1 kHz</b><span data-en="capture, enrollment and live" data-he="דגימה, רישום ושידור חי">capture, enrollment and live</span></div>
       <div class="stat"><b class="ltr">20/20</b><span data-en="correct IDs, leave-one-out" data-he="זיהויים נכונים בבדיקה">correct IDs, leave-one-out</span></div>
       <div class="stat"><b class="ltr">0</b><span data-en="biometric data uploaded" data-he="נתונים ביומטריים שעולים לענן">biometric data uploaded</span></div>
     </div>
@@ -795,7 +763,6 @@
     <div class="row-btns rev" style="--d:.25s">
       <button class="btn solid" id="goodnight" data-ripple data-en="Good night" data-he="לילה טוב">Good night</button>
       <button class="btn" id="allon" data-ripple data-en="Wake the house" data-he="להעיר את הבית">Wake the house</button>
-      <span class="badge i" data-en="ILLUSTRATION" data-he="הדגמה">ILLUSTRATION</span>
     </div>
 
     <div class="sub" data-en="A REAL AC REMOTE — NOT A TOGGLE" data-he="שלט מזגן אמיתי — לא מתג">A REAL AC REMOTE — NOT A TOGGLE</div>
@@ -853,12 +820,6 @@
       <div class="auto" data-copy><b>ON INCOMING MAIL</b><p data-en="&ldquo;When mail comes in from the bank, summarize it and ping me.&rdquo;" data-he="״כשמגיע מייל מהבנק, תסכמי ותתריעי לי.״">&ldquo;When mail comes in from the bank, summarize it and ping me.&rdquo;</p></div>
     </div>
 
-    <div class="stats rev">
-      <div class="stat"><b class="ltr">3000+</b><span data-en="integrations reachable" data-he="אינטגרציות נגישות">integrations reachable</span></div>
-      <div class="stat"><b class="ltr">356</b><span data-en="AC models onboard-ready" data-he="דגמי מזגן מוכנים לחיבור">AC models onboard-ready</span></div>
-      <div class="stat"><b class="ltr">129</b><span data-en="AC brands" data-he="מותגי מזגנים">AC brands</span></div>
-      <div class="stat"><b class="ltr">60s</b><span data-en="live refresh across the hub" data-he="רענון חי בכל המסך">live refresh across the hub</span></div>
-    </div>
   </div>
 </section>
 
@@ -918,7 +879,6 @@
 
     <div class="row-btns rev">
       <button class="btn" id="popBtn" data-ripple data-en="Pop out a conversation" data-he="לתלוש שיחה לחלון">Pop out a conversation</button>
-      <span class="badge i" data-en="ILLUSTRATION · PLACEHOLDER ROWS" data-he="הדגמה · שורות דוגמה">ILLUSTRATION · PLACEHOLDER ROWS</span>
     </div>
 
     <div class="tri rev">
@@ -961,7 +921,6 @@
         </div>
       </div>
       <div style="font-size:.62rem;color:var(--dim);line-height:1.6;margin-top:10px;text-align:center">
-        <span class="badge i" data-en="ILLUSTRATION" data-he="הדגמה">ILLUSTRATION</span>
         <span data-en="Two routes race in parallel: a fixed cloud address so it works from cellular, and a direct local route for instant approval at home. Checked about every 2s, within a window of up to 5 minutes." data-he="שני מסלולים מתחרים במקביל: כתובת ענן קבועה שעובדת גם מסלולר, ומסלול מקומי ישיר לאישור מיידי בבית. נבדק כל 2 שניות בערך, בחלון של עד 5 דקות.">Two routes race in parallel: a fixed cloud address so it works from cellular, and a direct local route for instant approval at home. Checked about every 2s, within a window of up to 5 minutes.</span>
       </div>
     </div>
@@ -1029,7 +988,6 @@
     <div class="ticker rev" id="ticker"></div>
     <div class="row-btns rev">
       <button class="btn" id="stallBtn" data-ripple data-en="Simulate a stall" data-he="לדמות תקיעה">Simulate a stall</button>
-      <span class="badge i" data-en="ILLUSTRATION" data-he="הדגמה">ILLUSTRATION</span>
     </div>
 
     <div class="stats rev">
@@ -1039,8 +997,7 @@
       <div class="stat"><b class="ltr">~7s</b><span data-en="request to finished agent result" data-he="מבקשה לתוצאה מוגמרת">request to finished agent result</span></div>
     </div>
 
-    <div class="sub" data-en="SHE BUILDS HER OWN ABILITIES" data-he="היא בונה לעצמה יכולות">SHE BUILDS HER OWN ABILITIES</div>
-    <div class="card rev">
+    <div class="card rev" style="margin-top:34px">
       <p data-en="One agent writes a new skill. The code is compile-checked before it is allowed to land, a reviewer agent audits it automatically, and the capability can go live without rebuilding the app." data-he="סוכן אחד כותב מיומנות חדשה. הקוד נבדק בקומפילציה לפני שהוא מורשה להיכנס, סוכן סוקר מבקר אותו אוטומטית, והיכולת יכולה לעלות לאוויר בלי לבנות מחדש את האפליקציה.">One agent writes a new skill. The code is compile-checked before it is allowed to land, a reviewer agent audits it automatically, and the capability can go live without rebuilding the app.</p>
       <p style="margin-top:12px" data-en="The proactive loop checks mail and calendar every 90 seconds, raises only what actually matters, gives a forward-looking heads-up on new events, and won't alert you twice about the same thing — even after a restart." data-he="הלולאה הפרואקטיבית בודקת מייל ויומן כל 90 שניות, מעלה רק מה שבאמת חשוב, נותנת התראה מקדימה על אירועים חדשים, ולא תתריע פעמיים על אותו דבר — גם אחרי הפעלה מחדש.">The proactive loop checks mail and calendar every 90 seconds, raises only what actually matters, gives a forward-looking heads-up on new events, and won't alert you twice about the same thing — even after a restart.</p>
     </div>
@@ -1076,14 +1033,15 @@
     <div class="chips rev" id="chips"></div>
     <div class="count rev" id="count"></div>
     <div class="grid56" id="grid56"></div>
-    <div class="residue rev" id="residue" aria-hidden="true"></div>
-    <p style="font-size:.66rem;color:var(--dim);margin-top:10px" data-en="Filtered-out capabilities collapse into dots instead of vanishing, so the size of the whole set stays visible." data-he="יכולות שסוננו מתכנסות לנקודות במקום להיעלם, כדי שגודל הסט המלא יישאר גלוי.">Filtered-out capabilities collapse into dots instead of vanishing, so the size of the whole set stays visible.</p>
+    <div class="row-btns"><button class="btn" id="moreBtn" data-ripple></button></div>
+    <div class="residue" id="residue" aria-hidden="true"></div>
 
     <table class="matrix hide" id="matrix"></table>
 
-    <div class="sub" data-en="STATS LEDGER — EVERY NUMBER ON THIS PAGE" data-he="ספר המספרים — כל מספר בדף הזה">STATS LEDGER — EVERY NUMBER ON THIS PAGE</div>
-    <p style="font-size:.78rem;color:var(--muted);line-height:1.7" data-en="One table so the whole page is auditable in one place. Two badges only." data-he="טבלה אחת כדי שכל הדף יהיה ניתן לבדיקה במקום אחד. שני תגים בלבד.">One table so the whole page is auditable in one place. Two badges only.</p>
-    <table class="ledger" id="ledger"></table>
+    <div class="sub" data-en="WHERE THE NUMBERS COME FROM" data-he="מאיפה המספרים">WHERE THE NUMBERS COME FROM</div>
+    <p style="font-size:.8rem;color:var(--muted);line-height:1.7" data-en="Every number on this page is listed in one place with its source, so the whole thing is auditable." data-he="כל מספר בדף הזה מרוכז במקום אחד עם המקור שלו, כך שהכל ניתן לבדיקה.">Every number on this page is listed in one place with its source, so the whole thing is auditable.</p>
+    <div class="row-btns"><button class="btn" id="ledgerBtn" data-ripple></button></div>
+    <table class="ledger hide" id="ledger"></table>
   </div>
 </section>
 
@@ -1096,6 +1054,9 @@
     <div><span class="badge d">DERIVED</span><span data-en="Computed on this page from the capability list itself." data-he="מחושב בדף הזה מרשימת היכולות עצמה.">Computed on this page from the capability list itself.</span></div>
     <div style="margin-top:8px"><span class="badge o">OWNER-VERIFIED</span><span data-en="Stated by the system's author. No benchmark claim, no comparison to any other assistant." data-he="נאמר על ידי מי שבנה את המערכת. בלי טענת בנצ׳מרק, בלי השוואה לעוזר אחר.">Stated by the system's author. No benchmark claim, no comparison to any other assistant.</span></div>
     <div style="margin-top:8px"><span class="badge i">ILLUSTRATION</span><span data-en="An interactive demonstration on this page — not a live connection to a running system. No real personal, financial or home data appears anywhere here." data-he="הדגמה אינטראקטיבית בדף הזה — לא חיבור חי למערכת שרצה. אין כאן שום נתון אישי, פיננסי או ביתי אמיתי.">An interactive demonstration on this page — not a live connection to a running system. No real personal, financial or home data appears anywhere here.</span></div>
+  </div>
+  <div class="row-btns" style="justify-content:center;margin-top:30px">
+    <button class="btn" id="motion" data-ripple><span data-en="Motion" data-he="תנועה">Motion</span> <b id="motionVal" style="color:var(--c)">AUTO</b></button>
   </div>
   <footer data-en="Alex. — living-light HUD · one HTML file, no libraries, no network." data-he="אלכס. — living-light HUD · קובץ HTML אחד, בלי ספריות, בלי רשת.">Alex. — living-light HUD · one HTML file, no libraries, no network.</footer>
 </section>
@@ -1177,7 +1138,7 @@ const mq = matchMedia('(prefers-reduced-motion: reduce)');
 function still() { return MOTION === 'still' || (MOTION === 'auto' && mq.matches); }
 function applyMotion() {
   document.documentElement.dataset.motion = still() ? 'still' : 'full';
-  $('#motion').textContent = MOTION.toUpperCase();
+  $('#motionVal').textContent = MOTION.toUpperCase();
 }
 $('#motion').addEventListener('click', () => {
   MOTION = MOTION === 'auto' ? 'full' : MOTION === 'full' ? 'still' : 'auto';
@@ -1325,11 +1286,11 @@ const KEYS = [
   { k: 'GALAXY',     p: 0.000, col: '#8fb4ff', sh: 0, rot: 1.0, jit: .5, cam: { x: 0, y: 0, z: 1, r: 0 }, cut: 'dissolve' },
   { k: 'VOICE',      p: 0.125, col: '#4fd8ff', sh: 1, rot: 0,   jit: .9, cam: { x: 0, y: .02, z: 1.06, r: 0 }, cut: 'shutter' },
   { k: 'IDENTITY',   p: 0.250, col: '#ffb4d8', sh: 2, rot: .05, jit: .5, cam: { x: 0, y: 0, z: .98, r: -.02 }, cut: 'iris' },
-  { k: 'MIND',       p: 0.375, col: '#a98bff', sh: 3, rot: .15, jit: .35, cam: { x: 0, y: 0, z: 1.02, r: .03 }, cut: 'leak' },
+  { k: 'MIND',       p: 0.375, col: '#a98bff', sh: 3, rot: .15, jit: .35, cam: { x: 0, y: 0, z: 1.02, r: .03 }, cut: 'dissolve' },
   { k: 'FINANCE',    p: 0.500, col: '#ffc46b', sh: 4, rot: 0,   jit: .3, cam: { x: 0, y: -.02, z: .94, r: 0 }, cut: 'shutter' },
   { k: 'HOME',       p: 0.625, col: '#4fe3b0', sh: 5, rot: 0,   jit: .35, cam: { x: 0, y: 0, z: 1, r: 0 }, cut: 'iris' },
   { k: 'INTERFACES', p: 0.750, col: '#cfe0ff', sh: 6, rot: 0,   jit: .22, cam: { x: 0, y: 0, z: 1.04, r: 0 }, cut: 'dissolve' },
-  { k: 'AUTONOMY',   p: 0.875, col: '#c9a0ff', sh: 7, rot: .28, jit: .5, cam: { x: 0, y: 0, z: .96, r: .04 }, cut: 'leak' },
+  { k: 'AUTONOMY',   p: 0.875, col: '#c9a0ff', sh: 7, rot: .28, jit: .5, cam: { x: 0, y: 0, z: .96, r: .04 }, cut: 'dissolve' },
   { k: 'TRUST',      p: 1.000, col: '#ff86ae', sh: 8, rot: 0,   jit: .8, cam: { x: 0, y: 0, z: 1.05, r: 0 }, cut: 'iris' },
 ];
 const SEG = KEYS[1].p;
@@ -1378,7 +1339,7 @@ for (let i = 0; i < N; i++) {
 }
 const ORD = P.map(p => p.i).sort((x, y) => P[x].z - P[y].z);
 const S3 = [];
-for (let i = 0; i < 130; i++) S3.push({ x: (RA() - .5) * 2, y: (RA() - .5) * 2, z: .08 + RA() * .92 });
+for (let i = 0; i < 90; i++) S3.push({ x: (RA() - .5) * 2, y: (RA() - .5) * 2, z: .08 + RA() * .92 });
 
 /* ================= hero state ================= */
 const journey = $('#journey');
@@ -1387,7 +1348,7 @@ const captions = $$('.caption').map(el => {
   const i = KEYS.indexOf(k);
   return { el, start: i === 0 ? -.25 : k.p - .042, end: i === KEYS.length - 1 ? 1.06 : k.p + .042 };
 });
-const mode = $('#mode'), tel = $('#tel'), skip = $('#skip'), listenChip = $('#listenChip'), echoChip = $('#echoChip');
+const mode = $('#mode'), echoChip = $('#echoChip');
 let flash = 0, shock = null, cut = null, lastShape = -1, vel = 0, lastScroll = scrollY;
 let idle = 0, exhale = 0, pulseCol = null, insp = 0;
 const cam = { x: 0, y: 0, z: 1, r: 0 };
@@ -1396,9 +1357,8 @@ let t0 = 0, IGN = 2.4;
 if (still()) t0 = -IGN * 1000;
 
 /* progress + rail from KEYS */
-const prog = $('#prog'), rail = $('#rail');
+const bar = $('#bar'), rail = $('#rail');
 KEYS.forEach((k, i) => {
-  prog.insertAdjacentHTML('beforeend', '<i data-s="' + i + '"></i>');
   const b = document.createElement('button');
   b.innerHTML = '<i></i>'; b.title = k.k; b.setAttribute('aria-label', k.k);
   b.addEventListener('click', () => {
@@ -1407,10 +1367,7 @@ KEYS.forEach((k, i) => {
   });
   rail.appendChild(b);
 });
-const segs = $$('.prog i'), dots = $$('.rail button');
-$('#skip button').addEventListener('click', () => {
-  scrollTo({ top: journey.offsetTop + (journey.offsetHeight - innerHeight) * KEYS[1].p + 2, behavior: 'smooth' });
-});
+const dots = $$('.rail button');
 
 /* tap to interrupt during VOICE · long-press anywhere to inspect (touch-native hover) */
 let inspect = 0, lpT = null, lpX = 0, lpY = 0;
@@ -1539,7 +1496,7 @@ function frame(t, dt) {
       st.z -= warp * .016 * (ST ? .25 : 1);
       if (st.z <= .05) { st.x = (RA() - .5) * 2; st.y = (RA() - .5) * 2; st.z = 1; continue; }
       const kk = Math.min(W, H) * .5 * cam.z * .6;
-      const a = (1 - st.z) * .5;
+      const a = (1 - st.z) * .3;
       ctx.strokeStyle = 'rgba(190,205,255,' + a + ')';
       ctx.lineWidth = (1 - st.z) * 2;
       ctx.beginPath();
@@ -1569,20 +1526,6 @@ function frame(t, dt) {
   const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 2.8);
   gr.addColorStop(0, col(neb)); gr.addColorStop(.4, col(neb * .3)); gr.addColorStop(1, col(0));
   ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, R * 2.8, 0, 7); ctx.fill();
-
-  /* god rays */
-  if (heroIn && !ST && tier < 1) {
-    const ia = .05 + flash * .25 + exhale * .03;
-    ctx.fillStyle = col(ia);
-    for (let i = 0; i < 5; i++) {
-      const a = T * .04 + i * (Math.PI * 2 / 5) + Math.sin(T * .3 + i) * .08;
-      const wdt = .1 + exhale * .06;
-      ctx.beginPath(); ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + Math.cos(a - wdt) * R * 9, cy + Math.sin(a - wdt) * R * 9);
-      ctx.lineTo(cx + Math.cos(a + wdt) * R * 9, cy + Math.sin(a + wdt) * R * 9);
-      ctx.closePath(); ctx.fill();
-    }
-  }
 
   /* particle field */
   const A = SHAPES[s.a.sh], B = SHAPES[s.b.sh];
@@ -1628,18 +1571,6 @@ function frame(t, dt) {
     ctx.fillStyle = col(BA[bi] * gAlpha);
     ctx.beginPath();
     for (let i = 0; i < arr.length; i += 3) { ctx.moveTo(arr[i] + arr[i + 2], arr[i + 1]); ctx.arc(arr[i], arr[i + 1], arr[i + 2], 0, 7); }
-    ctx.fill();
-  }
-  /* chromatic aberration on fast scroll */
-  if (heroIn && !ST && tier < 2 && vel > 18) {
-    const off = Math.min((vel - 18) * .32, 8) * DIRSIGN;
-    ctx.fillStyle = 'rgba(255,120,120,.2)';
-    ctx.beginPath();
-    for (let i = 0; i < buckets[3].length; i += 3) { const a2 = buckets[3][i] + off; ctx.moveTo(a2 + buckets[3][i + 2], buckets[3][i + 1]); ctx.arc(a2, buckets[3][i + 1], buckets[3][i + 2], 0, 7); }
-    ctx.fill();
-    ctx.fillStyle = 'rgba(120,160,255,.2)';
-    ctx.beginPath();
-    for (let i = 0; i < buckets[1].length; i += 3) { const a2 = buckets[1][i] - off; ctx.moveTo(a2 + buckets[1][i + 2], buckets[1][i + 1]); ctx.arc(a2, buckets[1][i + 1], buckets[1][i + 2], 0, 7); }
     ctx.fill();
   }
 
@@ -1734,22 +1665,13 @@ function frame(t, dt) {
     c.el.style.opacity = o;
     c.el.style.transform = 'translateY(' + (1 - o) * 26 + 'px)';
   });
-  for (let i = 0; i < segs.length; i++) {
-    const f = clamp((p - KEYS[i].p) / SEG + (i === 0 ? 1 : 0), 0, 1);
-    segs[i].style.setProperty('--f', f.toFixed(3));
-  }
+  bar.style.setProperty('--f', (scrollY / Math.max(1, document.body.scrollHeight - innerHeight)).toFixed(4));
   if (s.i !== lastSeg) {
     lastSeg = s.i;
     dots.forEach((d, i) => d.setAttribute('aria-current', String(i === s.i)));
   }
   const wantLbl = heroIn ? s.near.k : (secLbl || s.near.k);
   if (wantLbl !== lastLbl) { lastLbl = wantLbl; mode.textContent = wantLbl; }
-  if (heroIn) {
-    const tt = 'CH ' + (s.i + 1) + '/9 · ' + s.a.k + '→' + s.b.k + ' ' + Math.round(s.m * 100) + '% · ' + active + 'p · T' + tier;
-    if (tt !== lastTel) { lastTel = tt; tel.innerHTML = '<b>' + s.near.k + '</b><br>' + tt; }
-  } else if (lastTel) { lastTel = ''; tel.textContent = ''; }
-  listenChip.classList.toggle('on', heroIn && exhale > .5 && !inspect);
-  skip.classList.toggle('on', heroIn && p < .02 && idle > 5000);
   if (inspect && s.near.k !== lastAnno) {
     lastAnno = s.near.k;
     const a = ANNO[s.near.k] || ANNO.GALAXY, he = LANG === 'he';
@@ -2163,7 +2085,7 @@ const CATS = [
   { k: 'autonomy', en: 'AUTONOMY', he: 'אוטונומיה', c: '#c9a0ff' },
 ];
 const catOf = k => CATS.find(c => c.k === k) || CATS[0];
-let catSel = new Set(), query = '', matrixOn = false;
+let catSel = new Set(), query = '', matrixOn = false, showAll = false;
 function matches(c) {
   if (catSel.size && !catSel.has(c.c)) return false;
   if (!query) return true;
@@ -2182,19 +2104,28 @@ function renderCaps() {
     pulse(catOf(k).c, false);
   }));
   const shown = CAPS.filter(matches);
+  const cap = showAll || query || catSel.size ? 1e9 : 12;
+  let seen = 0;
   $('#grid56').innerHTML = CAPS.map((c, i) => {
     const cat = catOf(c.c);
-    return '<div class="cap' + (matches(c) ? ' in' : ' gone') + '" data-i="' + i + '" style="--cc:' + cat.c + '">' +
+    const vis = matches(c) && seen < cap;
+    if (matches(c)) seen++;
+    return '<div class="cap' + (vis ? ' in' : ' gone') + '" data-i="' + i + '" style="--cc:' + cat.c + '">' +
       '<span class="scan"></span><div class="hd"><span class="ct">' + (he ? c.th : c.te) + '</span>' +
       '<span class="cc">' + (he ? cat.he : cat.en) + '</span></div>' +
       '<div class="dt"><div><p>' + (he ? c.dh : c.de) + '</p></div></div></div>';
   }).join('');
   $$('#grid56 .cap').forEach(el => el.addEventListener('click', () => el.classList.toggle('open')));
-  const hidden = CAPS.length - shown.length;
-  $('#residue').innerHTML = CAPS.filter(c => !matches(c)).map(c => '<i style="--rc:' + catOf(c.c).c + '"></i>').join('');
+  const onScreen = Math.min(shown.length, cap);
+  $('#residue').innerHTML = catSel.size || query
+    ? CAPS.filter(c => !matches(c)).map(c => '<i style="--rc:' + catOf(c.c).c + '"></i>').join('') : '';
   $('#count').textContent = he
-    ? 'מוצגות ' + shown.length + ' מתוך ' + CAPS.length + (hidden ? ' · ' + hidden + ' מכונסות לנקודות' : '')
-    : 'showing ' + shown.length + ' of ' + CAPS.length + (hidden ? ' · ' + hidden + ' collapsed to dots' : '');
+    ? 'מוצגות ' + onScreen + ' מתוך ' + CAPS.length
+    : 'showing ' + onScreen + ' of ' + CAPS.length;
+  const rest = shown.length - onScreen;
+  const mb = $('#moreBtn');
+  mb.classList.toggle('hide', rest <= 0);
+  mb.textContent = he ? 'להציג את כל ' + CAPS.length + ' היכולות' : 'Show all ' + CAPS.length + ' capabilities';
   const max = Math.max(...CATS.map(c => CAPS.filter(x => x.c === c.k && matches(x)).length), 1);
   $('#matrix').innerHTML = '<tr><th>' + (he ? 'קטגוריה' : 'CATEGORY') + '</th><th>' + (he ? 'מוצגות' : 'SHOWN') + '</th><th></th></tr>' +
     CATS.map(c => {
@@ -2207,6 +2138,14 @@ function renderCaps() {
   $('#residue').classList.toggle('hide', matrixOn);
 }
 $('#q').addEventListener('input', e => { query = e.target.value; renderCaps(); });
+$('#moreBtn').addEventListener('click', () => { showAll = true; renderCaps(); });
+$('#ledgerBtn').addEventListener('click', () => {
+  const t = $('#ledger'), open = t.classList.toggle('hide') === false;
+  $('#ledgerBtn').classList.toggle('on', open);
+  $('#ledgerBtn').textContent = LANG === 'he'
+    ? (open ? 'לסגור את הטבלה' : 'להציג את כל המספרים')
+    : (open ? 'Hide the table' : 'Show every number');
+});
 $('#matrixBtn').addEventListener('click', () => {
   matrixOn = !matrixOn;
   $('#matrixBtn').classList.toggle('on', matrixOn);
@@ -2250,6 +2189,11 @@ const LED = [
 ];
 function renderLedger() {
   const he = LANG === 'he';
+  const lb = $('#ledgerBtn');
+  if (lb) {
+    const open = !$('#ledger').classList.contains('hide');
+    lb.textContent = he ? (open ? 'לסגור את הטבלה' : 'להציג את כל המספרים') : (open ? 'Hide the table' : 'Show every number');
+  }
   const derived = [
     [String(CAPS.length), 'capabilities listed on this page', 'יכולות שמופיעות בדף הזה'],
     [String(CATS.length), 'categories in the registry', 'קטגוריות במפתח'],
