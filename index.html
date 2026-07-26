@@ -1201,6 +1201,10 @@ const $$ = s => [...document.querySelectorAll(s)];
 /* deterministic pseudo-random (no Math.random at draw time, stable prints) */
 function rnd(seed) { let s = seed | 0; return () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }; }
 const RA = rnd(20260725);
+/* sine LUT — thousands of particles x 2 trig calls per frame is a real cost */
+const LUT = new Float32Array(2048);
+for (let i = 0; i < 2048; i++) LUT[i] = Math.sin(i / 2048 * Math.PI * 2);
+const fsin = a => LUT[((a * 325.949 + 2048e3) | 0) & 2047];
 
 /* ================= motion preference ================= */
 let MOTION = 'auto';
@@ -1219,16 +1223,19 @@ $('#motion').addEventListener('click', () => {
 
 /* ================= one scheduler ================= */
 const JOBS = new Set();
-let last = 0, dts = [], tier = 0, raf = 0;
+let last = 0, dts = [], tier = 0, raf = 0, warm = 0, lastStep = 0;
 function reg(fn) { JOBS.add(fn); }
 function unreg(fn) { JOBS.delete(fn); }
 function loop(t) {
   const dt = last ? t - last : 16; last = t;
-  /* outliers (scroll jumps, tab wake, layout) are jank, not sustained load */
-  if (dt < 100) { dts.push(dt); if (dts.length > 45) dts.shift(); }
-  if (dts.length === 45 && tier < 4) {
-    const mean = dts.reduce((a, b) => a + b, 0) / 45;
-    if (mean > 26) { tier++; dts = []; if (tier === 3) resize(); }
+  warm += dt;
+  /* Only sustained load may cost quality. Load jank, scroll jumps and tab wakes must not:
+     ignore any frame over 60ms, skip the first 4s, demand a mean under ~36fps, and never
+     step down twice within 3s. */
+  if (warm > 4000 && dt < 60) { dts.push(dt); if (dts.length > 60) dts.shift(); }
+  if (dts.length === 60 && tier < 4 && t - lastStep > 3000) {
+    const mean = dts.reduce((a, b) => a + b, 0) / 60;
+    if (mean > 28) { tier++; lastStep = t; dts = []; if (tier === 3) resize(); }
   }
   for (const fn of JOBS) fn(t, dt);
   raf = requestAnimationFrame(loop);
@@ -1267,9 +1274,12 @@ function setLang(l, animate) {
 $('#lang').addEventListener('click', () => setLang(LANG === 'he' ? 'en' : 'he', true));
 
 /* ================= shapes ================= */
-/* a 1440px field needs more, and bigger, particles than a 390px one */
+/* Match the phone's visual density: particles scale with the field's AREA, not its width.
+   390x844 -> R 78 -> ~420. 1440x900 -> R 259 -> ~4400. Same dots-per-pixel, so a big
+   screen shows the same solid shape rather than a sparse scatter of the same 420 points. */
 const BIG = innerWidth >= 1024;
-const N = BIG ? 600 : 420;
+const R0 = BIG ? Math.min(innerWidth * .45, innerHeight * .8) * .40 : Math.min(innerWidth, innerHeight) * .2;
+const N = Math.max(420, Math.min(3400, Math.round(Math.PI * R0 * R0 * .016)));
 function shapeGalaxy() {
   const p = [], GA = Math.PI * (3 - Math.sqrt(5));
   for (let i = 0; i < N; i++) { const r = Math.sqrt((i + .5) / N), a = i * GA + r * 2.2; p.push({ x: Math.cos(a) * r, y: Math.sin(a) * r * .92 }); }
@@ -1314,7 +1324,8 @@ function sampleGlyph(draw, seed) {
   const S = 220, c2 = document.createElement('canvas'); c2.width = c2.height = S;
   const x2 = c2.getContext('2d'); draw(x2, S);
   const d = x2.getImageData(0, 0, S, S).data, pool = [];
-  for (let y = 0; y < S; y += 2) for (let x = 0; x < S; x += 2) if (d[(y * S + x) * 4 + 3] > 128) pool.push({ x: (x - S / 2) / 95, y: (y - S / 2 - 2) / 95 });
+  const st = N > 1500 ? 1 : 2;
+  for (let y = 0; y < S; y += st) for (let x = 0; x < S; x += st) if (d[(y * S + x) * 4 + 3] > 128) pool.push({ x: (x - S / 2) / 95, y: (y - S / 2 - 2) / 95 });
   const p = [], r = rnd(seed), L = pool.length;
   if (!L) { for (let i = 0; i < N; i++) p.push({ x: 0, y: 0 }); return p; }
   /* walk the silhouette evenly so the glyph stays legible at any field size */
@@ -1361,7 +1372,7 @@ function shapeHeart() {
 }
 const SHAPES = [shapeGalaxy(), shapeWave(), shapeTwin(), shapeNet(), shapeChart(), shapeHouse(), shapePanels(), shapeSwarm(), shapeHeart()];
 /* per-shape halo: crisp for drawn glyphs, generous for clouds */
-const HL = [2.7, 2.4, 2.6, 2.2, 2.0, 1.75, 1.7, 2.3, 2.5];
+const HL = [3.1, 2.8, 3.0, 2.6, 2.4, 2.1, 2.0, 2.7, 2.9];
 
 /* ================= chapters ================= */
 const KEYS = [
@@ -1420,26 +1431,32 @@ for (let i = 0; i < N; i++) {
   });
 }
 const ORD = P.map(p => p.i).sort((x, y) => P[x].z - P[y].z);
+/* four alpha buckets, preallocated — rebuilding JS arrays every frame at this count churns GC */
+const BUF = [0, 1, 2, 3].map(() => new Float32Array(N * 3));
+const BC = [0, 0, 0, 0];
 
-/* one soft light sprite, regenerated only when her colour actually shifts */
-const spr = document.createElement('canvas');
-spr.width = spr.height = 64;
-const sctx = spr.getContext('2d');
-let sprKey = '';
-function sprite(r, g, b) {
+/* her atmosphere, pre-rendered once per colour and blitted — filling two
+   million-pixel gradients every frame was the other half of the cost */
+const atm = document.createElement('canvas');
+atm.width = atm.height = 256;
+const actx = atm.getContext('2d');
+let atmKey = '';
+function atmos(r, g, b) {
   const key = (r >> 3) + ',' + (g >> 3) + ',' + (b >> 3);
-  if (key === sprKey) return spr;
-  sprKey = key;
-  sctx.clearRect(0, 0, 64, 64);
-  const gg = sctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-  gg.addColorStop(0, 'rgba(255,255,255,.97)');
-  gg.addColorStop(.14, 'rgba(' + r + ',' + g + ',' + b + ',.94)');
-  gg.addColorStop(.32, 'rgba(' + r + ',' + g + ',' + b + ',.26)');
-  gg.addColorStop(1, 'rgba(' + r + ',' + g + ',' + b + ',0)');
-  sctx.fillStyle = gg;
-  sctx.beginPath(); sctx.arc(32, 32, 32, 0, 7); sctx.fill();
-  return spr;
+  if (key === atmKey) return atm;
+  atmKey = key;
+  actx.clearRect(0, 0, 256, 256);
+  const c = 'rgba(' + r + ',' + g + ',' + b + ',';
+  const gg = actx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  gg.addColorStop(0, c + '1)');
+  gg.addColorStop(.12, c + '.55)');
+  gg.addColorStop(.34, c + '.2)');
+  gg.addColorStop(1, c + '0)');
+  actx.fillStyle = gg;
+  actx.beginPath(); actx.arc(128, 128, 128, 0, 7); actx.fill();
+  return atm;
 }
+
 const S3 = [];
 for (let i = 0; i < (BIG ? 70 : 90); i++) S3.push({ x: (RA() - .5) * 2, y: (RA() - .5) * 2, z: .08 + RA() * .92 });
 
@@ -1583,6 +1600,8 @@ function frame(t, dt) {
   /* everything drawn in absolute px scales with the field, or it reads as dust on a big screen */
   const SCL = clamp(R / 80, 1, 3.4);
   const LW = Math.max(1, SCL * .62);
+  /* dots barely grow — a dense field of small points reads sharper than a sparse field of blobs */
+  const DOT = wide ? 1.06 : 1;
   if (s.a.sh === 8 || s.b.sh === 8) R *= 1 + .035 * Math.sin(T * 2.6);
 
   /* camera */
@@ -1635,13 +1654,13 @@ function frame(t, dt) {
 
   /* nebula */
   /* atmosphere only — the particles must stay legible as a shape, so this stays faint */
-  const neb = (heroIn ? .17 : .1) * (.85 + breath * .3);
-  const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 2.1);
-  gr.addColorStop(0, col(neb)); gr.addColorStop(.32, col(neb * .38)); gr.addColorStop(1, col(0));
-  ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, R * 2.1, 0, 7); ctx.fill();
-  const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * .34);
-  cg.addColorStop(0, col((heroIn ? .16 : .07) * (.8 + breath * .45))); cg.addColorStop(1, col(0));
-  ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(cx, cy, R * .34, 0, 7); ctx.fill();
+  const am = atmos(r, g, b), ar = R * 2.1;
+  ctx.globalAlpha = clamp((heroIn ? .3 : .17) * (.85 + breath * .3), 0, 1);
+  ctx.drawImage(am, cx - ar, cy - ar, ar * 2, ar * 2);
+  const cr2 = R * .5;
+  ctx.globalAlpha = clamp((heroIn ? .3 : .12) * (.8 + breath * .45), 0, 1);
+  ctx.drawImage(am, cx - cr2, cy - cr2, cr2 * 2, cr2 * 2);
+  ctx.globalAlpha = 1;
 
   /* particle field */
   const A = SHAPES[s.a.sh], B = SHAPES[s.b.sh];
@@ -1649,7 +1668,7 @@ function frame(t, dt) {
   const ca_ = Math.cos(ang), sa_ = Math.sin(ang);
   insp = lerp(insp, inspect, .12);
   const jit = ST ? .08 : s.jit * (1 - exhale * .3) * (1 - insp * .8);
-  const NN = tier >= 4 ? Math.round(N * .62) : N;
+  const NN = tier >= 4 ? Math.round(N * .5) : tier >= 3 ? Math.round(N * .72) : N;
   const active = heroIn ? NN : 140;
   const gAlpha = heroIn ? 1 : .35;
   const nearK = s.near.k;
@@ -1661,7 +1680,7 @@ function frame(t, dt) {
   const roomLit = nearK === 'HOME' ? Math.floor(T * 1.2) % 5 : -1;
   const satPush = nearK === 'AUTONOMY' ? agSel : -1;
 
-  const buckets = [[], [], [], []];
+  BC[0] = BC[1] = BC[2] = BC[3] = 0;
   for (let n = 0; n < active; n++) {
     const pi = ORD[n], pa = A[pi], pb = B[pi], pp = P[pi];
     let x = lerp(pa.x, pb.x, s.m), y = lerp(pa.y, pb.y, s.m);
@@ -1670,10 +1689,10 @@ function frame(t, dt) {
     /* depth barely moves a point — otherwise a glyph is drawn at three sizes at once */
     const zp = 1 + (pp.z - 1) * .26;
     const rx = (x * ca_ - y * sa_) * zp, ry = (x * sa_ + y * ca_) * zp;
-    const wob = Math.sin(T * pp.sp * 2 + pp.ph) * .035 * jit;
+    const wob = fsin(T * pp.sp * 2 + pp.ph) * .035 * jit;
     const px = cx + (rx + wob) * R;
-    let py = cy + (ry + Math.cos(T * pp.sp * 1.7 + pp.ph) * .035 * jit) * R;
-    if (envV) py += Math.sin(pp.ph + T * 3) * envV * R * .06;
+    let py = cy + (ry + fsin(T * pp.sp * 1.7 + pp.ph + 1.5708) * .035 * jit) * R;
+    if (envV) py += fsin(pp.ph + T * 3) * envV * R * .06;
     if (!ST) py += (pp.z - 1) * vel * .35;
     let al = pp.al * pp.z * gAlpha;
     if (envV) al *= .55 + envV * .5;
@@ -1681,20 +1700,37 @@ function frame(t, dt) {
     if (roomLit >= 0) al *= pp.cl === roomLit ? 1.45 : .78;
     al = clamp(al, 0, 1);
     const bi = al > .75 ? 3 : al > .5 ? 2 : al > .28 ? 1 : 0;
-    buckets[bi].push(px, py, pp.sz * pp.z * (.7 + .3 * SCL));
+    const buf = BUF[bi], k = BC[bi];
+    buf[k] = px; buf[k + 1] = py; buf[k + 2] = pp.sz * pp.z * DOT;
+    BC[bi] = k + 3;
   }
   const BA = wide ? [.24, .44, .66, .95] : [.2, .4, .62, .88];
   const bb = .9 + breath * .2;
-  const sp = sprite(r, g, b), HALO = lerp(HL[s.a.sh], HL[s.b.sh], s.m);
-  for (let bi = 0; bi < 4; bi++) {
-    const arr = buckets[bi]; if (!arr.length) continue;
-    ctx.globalAlpha = clamp(BA[bi] * gAlpha * bb, 0, 1);
-    for (let i = 0; i < arr.length; i += 3) {
-      const d = arr[i + 2] * HALO;
-      ctx.drawImage(sp, arr[i] - d, arr[i + 1] - d, d * 2, d * 2);
+  const HALO = lerp(HL[s.a.sh], HL[s.b.sh], s.m);
+  /* aura: circles (a square halo reads as a block), brightest bucket only */
+  if (!ST && tier < 3) {
+    const L = BC[3], arr = BUF[3];
+    if (L) {
+      ctx.fillStyle = col(BA[3] * gAlpha * bb * .12);
+      ctx.beginPath();
+      for (let i = 0; i < L; i += 3) {
+        const d = arr[i + 2] * HALO;
+        ctx.moveTo(arr[i] + d, arr[i + 1]); ctx.arc(arr[i], arr[i + 1], d, 0, 7);
+      }
+      ctx.fill();
     }
   }
-  ctx.globalAlpha = 1;
+  for (let bi = 0; bi < 4; bi++) {
+    const L = BC[bi]; if (!L) continue;
+    const arr = BUF[bi];
+    ctx.fillStyle = col(BA[bi] * gAlpha * bb);
+    ctx.beginPath();
+    for (let i = 0; i < L; i += 3) {
+      const d = arr[i + 2] < 1.35 ? arr[i + 2] : 1.35;
+      ctx.rect(arr[i] - d, arr[i + 1] - d, d * 2, d * 2);
+    }
+    ctx.fill();
+  }
 
   if (heroIn) {
     /* neural links + token pulses */
