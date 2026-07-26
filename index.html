@@ -1267,7 +1267,9 @@ function setLang(l, animate) {
 $('#lang').addEventListener('click', () => setLang(LANG === 'he' ? 'en' : 'he', true));
 
 /* ================= shapes ================= */
-const N = 420;
+/* a 1440px field needs more, and bigger, particles than a 390px one */
+const BIG = innerWidth >= 1024;
+const N = BIG ? 680 : 420;
 function shapeGalaxy() {
   const p = [], GA = Math.PI * (3 - Math.sqrt(5));
   for (let i = 0; i < N; i++) { const r = Math.sqrt((i + .5) / N), a = i * GA + r * 2.2; p.push({ x: Math.cos(a) * r, y: Math.sin(a) * r * .92 }); }
@@ -1313,14 +1315,21 @@ function sampleGlyph(draw, seed) {
   const x2 = c2.getContext('2d'); draw(x2, S);
   const d = x2.getImageData(0, 0, S, S).data, pool = [];
   for (let y = 0; y < S; y += 2) for (let x = 0; x < S; x += 2) if (d[(y * S + x) * 4 + 3] > 128) pool.push({ x: (x - S / 2) / 95, y: (y - S / 2 - 2) / 95 });
-  const p = [], r = rnd(seed);
-  for (let i = 0; i < N; i++) p.push(pool.length ? pool[Math.floor(r() * pool.length)] : { x: 0, y: 0 });
+  const p = [], r = rnd(seed), L = pool.length;
+  if (!L) { for (let i = 0; i < N; i++) p.push({ x: 0, y: 0 }); return p; }
+  /* walk the silhouette evenly so the glyph stays legible at any field size */
+  for (let i = 0; i < N; i++) {
+    const q = pool[Math.floor((i + r() * .8) * L / N) % L];
+    p.push({ x: q.x + (r() - .5) * .012, y: q.y + (r() - .5) * .012 });
+  }
   return p;
 }
 const shapeHouse = () => sampleGlyph((c, S) => {
-  c.fillStyle = '#fff'; c.fillRect(52, 100, 116, 86);
-  c.beginPath(); c.moveTo(30, 104); c.lineTo(110, 34); c.lineTo(190, 104); c.closePath(); c.fill();
-  c.clearRect(94, 130, 34, 56); c.clearRect(140, 122, 22, 22);
+  c.fillStyle = '#fff'; c.fillRect(50, 98, 120, 92);
+  c.beginPath(); c.moveTo(26, 102); c.lineTo(110, 30); c.lineTo(194, 102); c.closePath(); c.fill();
+  c.fillRect(146, 44, 18, 34);                 /* chimney */
+  c.clearRect(98, 142, 26, 48);                /* door */
+  c.clearRect(64, 118, 24, 24);                /* window */
 }, 5150);
 const shapePanels = () => sampleGlyph((c, S) => {
   c.strokeStyle = '#fff'; c.lineWidth = 5;
@@ -1410,7 +1419,7 @@ for (let i = 0; i < N; i++) {
 }
 const ORD = P.map(p => p.i).sort((x, y) => P[x].z - P[y].z);
 const S3 = [];
-for (let i = 0; i < 90; i++) S3.push({ x: (RA() - .5) * 2, y: (RA() - .5) * 2, z: .08 + RA() * .92 });
+for (let i = 0; i < (BIG ? 150 : 90); i++) S3.push({ x: (RA() - .5) * 2, y: (RA() - .5) * 2, z: .08 + RA() * .92 });
 
 /* ================= hero state ================= */
 const journey = $('#journey');
@@ -1546,6 +1555,9 @@ function frame(t, dt) {
   const cx = W / 2 + (wide ? W * .19 * DIRSIGN : 0);
   const cy = H * (wide ? .48 : .4);
   let R = wide ? Math.min(W * .45, H * .8) * .42 : Math.min(W, H) * .2;
+  /* everything drawn in absolute px scales with the field, or it reads as dust on a big screen */
+  const SCL = clamp(R / 80, 1, 3.4);
+  const LW = Math.max(1, SCL * .62);
   if (s.a.sh === 8 || s.b.sh === 8) R *= 1 + .05 * Math.sin(T * 2.6);
 
   /* camera */
@@ -1557,7 +1569,7 @@ function frame(t, dt) {
 
   /* trails */
   ctx.globalCompositeOperation = 'source-over';
-  const trail = ST || tier >= 2 ? 1 : (vel > 24 ? .18 : .28 + exhale * .08);
+  const trail = ST || tier >= 2 ? 1 : (vel > 24 ? .2 : (wide ? .4 : .28) + exhale * .06);
   ctx.fillStyle = trail >= 1 ? '#04050c' : 'rgba(4,5,12,' + trail + ')';
   ctx.fillRect(0, 0, W, H);
   ctx.globalCompositeOperation = 'lighter';
@@ -1573,7 +1585,7 @@ function frame(t, dt) {
       const kk = Math.min(W, H) * .5 * cam.z * (wide ? .85 : .6);
       const a = (1 - st.z) * .3;
       ctx.strokeStyle = 'rgba(190,205,255,' + a + ')';
-      ctx.lineWidth = (1 - st.z) * 2;
+      ctx.lineWidth = (1 - st.z) * 2 * Math.min(SCL, 2);
       ctx.beginPath();
       ctx.moveTo(cx + (st.x / pz) * kk, cy + (st.y / pz) * kk);
       ctx.lineTo(cx + (st.x / st.z) * kk, cy + (st.y / st.z) * kk);
@@ -1597,10 +1609,14 @@ function frame(t, dt) {
   ctx.translate(-cx, -cy);
 
   /* nebula */
-  const neb = heroIn ? .34 : .16;
-  const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 2.8);
-  gr.addColorStop(0, col(neb)); gr.addColorStop(.4, col(neb * .3)); gr.addColorStop(1, col(0));
-  ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, R * 2.8, 0, 7); ctx.fill();
+  /* atmosphere only — the particles must stay legible as a shape, so this stays faint */
+  const neb = heroIn ? .17 : .1;
+  const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 2.1);
+  gr.addColorStop(0, col(neb)); gr.addColorStop(.32, col(neb * .38)); gr.addColorStop(1, col(0));
+  ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, R * 2.1, 0, 7); ctx.fill();
+  const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * .34);
+  cg.addColorStop(0, col(heroIn ? .16 : .07)); cg.addColorStop(1, col(0));
+  ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(cx, cy, R * .34, 0, 7); ctx.fill();
 
   /* particle field */
   const A = SHAPES[s.a.sh], B = SHAPES[s.b.sh];
@@ -1608,7 +1624,7 @@ function frame(t, dt) {
   const ca_ = Math.cos(ang), sa_ = Math.sin(ang);
   insp = lerp(insp, inspect, .12);
   const jit = ST ? .08 : s.jit * (1 - exhale * .3) * (1 - insp * .8);
-  const NN = tier >= 4 ? 260 : N;
+  const NN = tier >= 4 ? Math.round(N * .62) : N;
   const active = heroIn ? NN : 140;
   const gAlpha = heroIn ? 1 : .35;
   const nearK = s.near.k;
@@ -1626,7 +1642,9 @@ function frame(t, dt) {
     let x = lerp(pa.x, pb.x, s.m), y = lerp(pa.y, pb.y, s.m);
     if (fis) { x += (pp.tw ? 1 : -1) * fis * .18; }
     if (satPush >= 0 && pp.sat === satPush) { x *= 1.16; y *= 1.16; }
-    const rx = (x * ca_ - y * sa_) * pp.z, ry = (x * sa_ + y * ca_) * pp.z;
+    /* depth barely moves a point — otherwise a glyph is drawn at three sizes at once */
+    const zp = 1 + (pp.z - 1) * .26;
+    const rx = (x * ca_ - y * sa_) * zp, ry = (x * sa_ + y * ca_) * zp;
     const wob = Math.sin(T * pp.sp * 2 + pp.ph) * .035 * jit;
     const px = cx + (rx + wob) * R;
     let py = cy + (ry + Math.cos(T * pp.sp * 1.7 + pp.ph) * .035 * jit) * R;
@@ -1635,12 +1653,12 @@ function frame(t, dt) {
     let al = pp.al * pp.z * gAlpha;
     if (envV) al *= .55 + envV * .5;
     if (sweep > -1e8 && py < sweep) al *= 1.9;
-    if (roomLit >= 0) al *= pp.cl === roomLit ? 1.5 : .55;
+    if (roomLit >= 0) al *= pp.cl === roomLit ? 1.45 : .78;
     al = clamp(al, 0, 1);
     const bi = al > .75 ? 3 : al > .5 ? 2 : al > .28 ? 1 : 0;
-    buckets[bi].push(px, py, pp.sz * pp.z);
+    buckets[bi].push(px, py, pp.sz * pp.z * (.62 + .38 * SCL));
   }
-  const BA = [.2, .4, .62, .88];
+  const BA = wide ? [.26, .46, .68, .95] : [.2, .4, .62, .88];
   for (let bi = 0; bi < 4; bi++) {
     const arr = buckets[bi]; if (!arr.length) continue;
     ctx.fillStyle = col(BA[bi] * gAlpha);
@@ -1654,12 +1672,12 @@ function frame(t, dt) {
     const netW = (s.a.sh === 3 ? 1 - s.m : 0) + (s.b.sh === 3 ? s.m : 0);
     if (netW > .05) {
       if (!ST && T - deadT > 4) { deadT = T; deadEdge = 1 + Math.floor(RA() * (netNodes.length - 1)); }
-      ctx.lineWidth = 1;
+      ctx.lineWidth = LW;
       for (let i = 1; i < netNodes.length; i++) {
         const n1 = netNodes[i], n2 = netNodes[(i * 3) % netNodes.length];
         const x1 = cx + (n1.x * ca_ - n1.y * sa_) * R, y1 = cy + (n1.x * sa_ + n1.y * ca_) * R;
         const x2 = cx + (n2.x * ca_ - n2.y * sa_) * R, y2 = cy + (n2.x * sa_ + n2.y * ca_) * R;
-        ctx.strokeStyle = col((i === deadEdge ? .05 : .22) * netW);
+        ctx.strokeStyle = col((i === deadEdge ? .06 : .26) * netW);
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
       }
       ctx.fillStyle = col(.95 * netW);
@@ -1670,7 +1688,7 @@ function frame(t, dt) {
         const x1 = cx + (n1.x * ca_ - n1.y * sa_) * R, y1 = cy + (n1.x * sa_ + n1.y * ca_) * R;
         const x2 = cx + (n2.x * ca_ - n2.y * sa_) * R, y2 = cy + (n2.x * sa_ + n2.y * ca_) * R;
         const px2 = lerp(x1, x2, tk.t), py2 = lerp(y1, y2, tk.t);
-        ctx.moveTo(px2 + 2.2, py2); ctx.arc(px2, py2, 2.2, 0, 7);
+        const tr = 2.2 * SCL * .7; ctx.moveTo(px2 + tr, py2); ctx.arc(px2, py2, tr, 0, 7);
       }
       ctx.fill();
     }
@@ -1682,7 +1700,7 @@ function frame(t, dt) {
         const rg = rings[i], age = T - rg.t0;
         if (age > 2.6) { rings.splice(i, 1); continue; }
         ctx.strokeStyle = col(rg.a * (1 - age / 2.6));
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = LW * 1.4;
         ctx.beginPath(); ctx.arc(cx, cy, R * (1.1 + age * .5), 0, 7); ctx.stroke();
       }
     }
@@ -1693,7 +1711,7 @@ function frame(t, dt) {
         const a = (i / 7) * Math.PI * 2 + .4 + ang;
         const k3 = i === satPush ? 1.16 : 1;
         ctx.strokeStyle = col((i === satPush ? .4 : .18) * sw);
-        ctx.lineWidth = i === satPush ? 1.6 : 1;
+        ctx.lineWidth = LW * (i === satPush ? 1.6 : 1);
         ctx.beginPath(); ctx.moveTo(cx, cy);
         ctx.lineTo(cx + Math.cos(a) * .95 * R * k3, cy + Math.sin(a) * .62 * R * k3);
         ctx.stroke();
@@ -1706,7 +1724,7 @@ function frame(t, dt) {
   if (shock) {
     shock.r += Math.min(W, H) * .035; shock.a *= .93;
     if (shock.a < .02) shock = null;
-    else { ctx.strokeStyle = col(shock.a); ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(cx, cy, shock.r, 0, 7); ctx.stroke(); }
+    else { ctx.strokeStyle = col(shock.a); ctx.lineWidth = 2.5 * Math.min(SCL, 2.2); ctx.beginPath(); ctx.arc(cx, cy, shock.r, 0, 7); ctx.stroke(); }
   }
   if (cut && !ST) {
     cut.t += dt / 1000;
@@ -1723,7 +1741,7 @@ function frame(t, dt) {
       lg.addColorStop(0, 'rgba(255,190,120,' + Math.max(0, .34 - ct * .5) + ')'); lg.addColorStop(1, 'rgba(255,190,120,0)');
       ctx.fillStyle = lg; ctx.fillRect(0, 0, W, H);
     } else if (cut.type === 'iris') {
-      ctx.strokeStyle = col(Math.max(0, .5 - ct)); ctx.lineWidth = 30 * (1 - ct / .55);
+      ctx.strokeStyle = col(Math.max(0, .5 - ct)); ctx.lineWidth = 30 * Math.min(SCL, 2) * (1 - ct / .55);
       ctx.beginPath(); ctx.arc(cx, cy, Math.max(W, H) * (.1 + ct * 1.1), 0, 7); ctx.stroke();
     }
   }
